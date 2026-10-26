@@ -215,10 +215,10 @@
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
                             <th class="py-3 px-4">IP Address *</th>
-                            <th class="py-3 px-4">Status</th>
-                            <th class="py-3 px-4">Device *</th>
                             <th class="py-3 px-4">Assigned To</th>
                             <th class="py-3 px-4">Dept / Room</th>
+                            <th class="py-3 px-4">Device *</th>
+                            <th class="py-3 px-4">Status</th>
                             <th class="py-3 px-4">Remarks</th>
                             <th class="py-3 px-4 text-right">Actions</th>
                         </tr>
@@ -611,10 +611,12 @@
                     <td class="py-3 px-4 font-mono font-bold text-blue-700">
                         ${item.ip}
                     </td>
-                    <td class="py-3 px-4">
-                        <button onclick="toggleStatus('${item.id}')" title="Click to quick-toggle status">
-                            ${statusBadge}
-                        </button>
+                    <td class="py-3 px-4 font-semibold text-slate-900">
+                        ${item.username || '<span class="text-slate-400 font-normal opacity-70">Unassigned</span>'}
+                    </td>
+                    <td class="py-3 px-4 text-slate-600">
+                        <span class="font-medium text-slate-800">${item.dept || '-'}</span>
+                        <span class="text-xs text-slate-400 block">${item.room || ''}</span>
                     </td>
                     <td class="py-3 px-4 text-slate-700">
                         <span class="inline-flex items-center space-x-1.5">
@@ -622,12 +624,10 @@
                             <span>${item.device}</span>
                         </span>
                     </td>
-                    <td class="py-3 px-4 font-semibold text-slate-900">
-                        ${item.username || '<span class="text-slate-400 font-normal opacity-70">Unassigned</span>'}
-                    </td>
-                    <td class="py-3 px-4 text-slate-600">
-                        <span class="font-medium text-slate-800">${item.dept || '-'}</span>
-                        <span class="text-xs text-slate-400 block">${item.room || ''}</span>
+                    <td class="py-3 px-4">
+                        <button onclick="toggleStatus('${item.id}')" title="Click to quick-toggle status">
+                            ${statusBadge}
+                        </button>
                     </td>
                     <td class="py-3 px-4 text-slate-500 text-xs max-w-xs truncate" title="${item.remarks || ''}">
                         ${item.remarks || '-'}
