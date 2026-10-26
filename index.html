@@ -225,7 +225,7 @@
     <!-- MAIN DATA TABLE CONTAINER -->
     <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden flex flex-col">
       
-      <!-- Desktop Table (Re-ordered Columns: IP Address, Assigned To, Dept / Room, Device, Status, Remarks, Actions) -->
+      <!-- Desktop Table -->
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
@@ -354,7 +354,7 @@
     </div>
   </div>
 
-  <!-- MANAGE SETTINGS MODAL (Edit Dept & Devices) -->
+  <!-- MANAGE SETTINGS MODAL (Syncs with Firebase DB) -->
   <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
       
@@ -371,7 +371,7 @@
         
         <!-- Departments Section -->
         <div>
-          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Departments</h4>
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Departments (Saved in Database)</h4>
           <div class="flex gap-2 mb-3">
             <input type="text" id="newDeptInput" placeholder="Add new Department..." class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs" />
             <button onclick="addDepartmentSetting()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Add</button>
@@ -383,7 +383,7 @@
 
         <!-- Device Types Section -->
         <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
-          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Device Types</h4>
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Device Types (Saved in Database)</h4>
           <div class="flex gap-2 mb-3">
             <input type="text" id="newDeviceInput" placeholder="Add new Device Type..." class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs" />
             <button onclick="addDeviceSetting()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Add</button>
@@ -394,7 +394,10 @@
         </div>
       </div>
 
-      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Changes auto-sync to Firebase DB
+        </span>
         <button onclick="closeSettingsModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-1.5 rounded-lg text-xs font-medium">
           Done
         </button>
@@ -466,37 +469,28 @@
       isFirebaseActive = false;
     }
 
-    // Default Configuration Lists
+    // Default Configuration Lists (Overwritten by Firebase if available)
     let departments = ["IT Infrastructure", "Software Engineering", "HR", "Finance", "Operations", "Administration", "Marketing"];
     let deviceTypes = ["Desktop PC", "Laptop", "Server", "Network Switch", "Router", "Printer", "IP Camera", "Access Point", "Firewall"];
 
     // In-Memory IP Records List
-    let ipRecords = [
-      { id: "demo-1", ip: "192.168.1.10", userName: "Anil Kumar", dept: "IT Infrastructure", room: "101-A", device: "Server", status: "Active", remarks: "Primary Domain Controller" },
-      { id: "demo-2", ip: "192.168.1.25", userName: "Priya Nair", dept: "Software Engineering", room: "204", device: "Laptop", status: "Active", remarks: "Dev Machine" },
-      { id: "demo-3", ip: "192.168.1.50", userName: "", dept: "IT Infrastructure", room: "Server Room", device: "Network Switch", status: "Active", remarks: "Cisco 48-Port Switch" },
-      { id: "demo-4", ip: "192.168.1.100", userName: "Suresh Menon", dept: "Finance", room: "105", device: "Desktop PC", status: "Reserved", remarks: "Accounts Terminal" },
-      { id: "demo-5", ip: "192.168.1.150", userName: "", dept: "Administration", room: "Reception", device: "Printer", status: "Inactive", remarks: "HP LaserJet - Needs Repair" }
-    ];
-
+    let ipRecords = [];
     let filteredRecords = [];
     let deptChart = null;
 
     // ==========================================
     // 2. INITIALIZATION & FIREBASE LISTENERS
     // ==========================================
-    window.addEventListener('DOMContentLoaded', () => {
-      populateDropdowns();
+    window.addEventListener('DOMContentLoaded', async () => {
+      await loadSettingsFromFirebase();
       
       if (isFirebaseActive && db) {
-        // Realtime Firestore Listener
+        // Realtime Firestore Listener for IP Records
         db.collection("ip_records").onSnapshot((snapshot) => {
-          if (!snapshot.empty) {
-            ipRecords = [];
-            snapshot.forEach((doc) => {
-              ipRecords.push({ id: doc.id, ...doc.data() });
-            });
-          }
+          ipRecords = [];
+          snapshot.forEach((doc) => {
+            ipRecords.push({ id: doc.id, ...doc.data() });
+          });
           applyFilters();
         }, (error) => {
           console.error("Firestore Error:", error);
@@ -505,11 +499,60 @@
       } else {
         document.getElementById('dbStatusBadge').innerHTML = '<i class="fa-solid fa-hard-drive mr-1"></i>Local Mode';
         document.getElementById('dbStatusBadge').className = 'text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400 border border-amber-300';
+        
+        // Default local records if no DB
+        ipRecords = [
+          { id: "demo-1", ip: "192.168.1.10", userName: "Anil Kumar", dept: "IT Infrastructure", room: "101-A", device: "Server", status: "Active", remarks: "Primary Domain Controller" },
+          { id: "demo-2", ip: "192.168.1.25", userName: "Priya Nair", dept: "Software Engineering", room: "204", device: "Laptop", status: "Active", remarks: "Dev Machine" }
+        ];
         applyFilters();
       }
 
       initChart();
     });
+
+    // Load Settings (Departments & Devices) from Firebase
+    async function loadSettingsFromFirebase() {
+      if (isFirebaseActive && db) {
+        try {
+          const doc = await db.collection("settings").doc("app_config").get();
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.departments && Array.isArray(data.departments)) {
+              departments = data.departments;
+            }
+            if (data.deviceTypes && Array.isArray(data.deviceTypes)) {
+              deviceTypes = data.deviceTypes;
+            }
+          } else {
+            // Initialize default settings in Firebase if none exist
+            await db.collection("settings").doc("app_config").set({
+              departments: departments,
+              deviceTypes: deviceTypes
+            });
+          }
+        } catch (err) {
+          console.error("Error loading settings from Firebase:", err);
+        }
+      }
+      populateDropdowns();
+    }
+
+    // Save Settings (Departments & Devices) to Firebase
+    async function saveSettingsToFirebase() {
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("settings").doc("app_config").set({
+            departments: departments,
+            deviceTypes: deviceTypes
+          });
+        } catch (err) {
+          console.error("Error saving settings to Firebase:", err);
+        }
+      }
+      populateDropdowns();
+      updateChartData();
+    }
 
     // Populate Select Menus
     function populateDropdowns() {
@@ -562,7 +605,6 @@
         const tr = document.createElement('tr');
         tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors";
 
-        // Status Badge Style
         let statusBadge = '';
         if (rec.status === 'Active') {
           statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">Active</span>`;
@@ -572,14 +614,7 @@
           statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">Inactive</span>`;
         }
 
-        // Exact Requested Column Order:
-        // 1. IP Address
-        // 2. Assigned To (User's Name)
-        // 3. Dept / Room
-        // 4. Device
-        // 5. Status
-        // 6. Remarks
-        // 7. Actions
+        // Column Order: IP Address, Assigned To, Dept/Room, Device, Status, Remarks, Actions
         tr.innerHTML = `
           <td class="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100">${rec.ip || '-'}</td>
           <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">${rec.userName || '<span class="text-slate-400 italic">Unassigned</span>'}</td>
@@ -609,7 +644,6 @@
       updateChartData();
     }
 
-    // Quick Status Toggle on Click
     async function quickToggleStatus(id) {
       const rec = ipRecords.find(r => r.id === id);
       if (!rec) return;
@@ -643,7 +677,6 @@
       const endNum = ipEnd ? ipToLong(ipEnd) : null;
 
       filteredRecords = ipRecords.filter(item => {
-        // Global Text Search
         const matchesSearch = !search || (
           (item.ip && item.ip.toLowerCase().includes(search)) ||
           (item.userName && item.userName.toLowerCase().includes(search)) ||
@@ -651,11 +684,9 @@
           (item.remarks && item.remarks.toLowerCase().includes(search))
         );
 
-        // Dropdown Filters
         const matchesDept = !dept || item.dept === dept;
         const matchesDevice = !device || item.device === device;
 
-        // IP Range Filter
         let matchesRange = true;
         if (startNum !== null || endNum !== null) {
           const itemNum = ipToLong(item.ip);
@@ -673,7 +704,6 @@
       renderTable();
     }
 
-    // Utility: Convert IPv4 String to Numeric Value for Range Comparison
     function ipToLong(ip) {
       const parts = ip.split('.');
       if (parts.length !== 4) return null;
@@ -804,7 +834,6 @@
           alert("Firebase write error: " + err.message);
         }
       } else {
-        // Local Fallback
         if (docId) {
           const index = ipRecords.findIndex(r => r.id === docId);
           if (index !== -1) ipRecords[index] = { id: docId, ...recordData };
@@ -833,7 +862,7 @@
     }
 
     // ==========================================
-    // 7. MANAGE SETTINGS (Departments & Device Types)
+    // 7. MANAGE SETTINGS (Syncs to Firebase)
     // ==========================================
     function openSettingsModal() {
       renderSettingsLists();
@@ -842,7 +871,6 @@
 
     function closeSettingsModal() {
       document.getElementById('settingsModal').classList.add('hidden');
-      populateDropdowns();
     }
 
     function renderSettingsLists() {
@@ -868,34 +896,38 @@
       `).join('');
     }
 
-    function addDepartmentSetting() {
+    async function addDepartmentSetting() {
       const input = document.getElementById('newDeptInput');
       const val = input.value.trim();
       if (val && !departments.includes(val)) {
         departments.push(val);
         input.value = '';
         renderSettingsLists();
+        await saveSettingsToFirebase();
       }
     }
 
-    function removeDepartmentSetting(index) {
+    async function removeDepartmentSetting(index) {
       departments.splice(index, 1);
       renderSettingsLists();
+      await saveSettingsToFirebase();
     }
 
-    function addDeviceSetting() {
+    async function addDeviceSetting() {
       const input = document.getElementById('newDeviceInput');
       const val = input.value.trim();
       if (val && !deviceTypes.includes(val)) {
         deviceTypes.push(val);
         input.value = '';
         renderSettingsLists();
+        await saveSettingsToFirebase();
       }
     }
 
-    function removeDeviceSetting(index) {
+    async function removeDeviceSetting(index) {
       deviceTypes.splice(index, 1);
       renderSettingsLists();
+      await saveSettingsToFirebase();
     }
 
     // ==========================================
@@ -948,7 +980,6 @@
         const result = await Tesseract.recognize(canvas, 'eng');
         const text = result.data.text;
         
-        // Match IPv4 RegEx
         const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/;
         const match = text.match(ipRegex);
 
