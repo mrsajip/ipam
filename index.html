@@ -64,14 +64,14 @@
 <body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col font-sans">
 
   <!-- ========================================== -->
-  <!-- 1. AUTH SCREEN (EMAIL LOGIN ONLY)          -->
+  <!-- 1. AUTH SCREEN (SIMPLE EMAIL LOGIN ONLY)   -->
   <!-- ========================================== -->
   <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-700 space-y-6">
       
-      <div class="text-center">
-        <img src="logo.png" alt="Logo" class="w-10 h-10 object-contain rounded-xl" />
-        </div>
+      <div class="text-center flex flex-col items-center">
+        <!-- Logo Image Added Here -->
+        <img src="logo.png" alt="IPAMS Logo" class="w-16 h-16 object-contain rounded-2xl mb-3 shadow-md" />
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white">IPAMS Login</h2>
         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enter your Firebase registered Email and Password</p>
       </div>
@@ -128,9 +128,8 @@
           
           <!-- Logo & Title -->
           <div class="flex items-center space-x-3">
-            <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20">
-              <i class="fa-solid fa-network-wired text-xl"></i>
-            </div>
+            <!-- Header Logo Image Added Here -->
+            <img src="logo.png" alt="IPAMS Logo" class="w-10 h-10 object-contain rounded-xl shadow-sm" />
             <div>
               <div class="flex items-center gap-2">
                 <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">IPAMS</span>
