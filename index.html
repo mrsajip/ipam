@@ -1,1267 +1,971 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPAMS - Enterprise IP Address Management System</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0f9ff',
-                            100: '#e0f2fe',
-                            500: '#0ea5e9',
-                            600: '#0284c7',
-                            700: '#0369a1',
-                            900: '#0c4a6e'
-                        }
-                    }
-                }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IPAMS - IP Address Management System</title>
+  
+  <!-- Tailwind CSS & FontAwesome Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Chart.js for Analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Firebase SDKs (v9 Compat Mode) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
             }
+          }
         }
-    </script>
-    <!-- FontAwesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Tesseract.js for OCR -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
-    <!-- Firebase JS SDK (v9 Compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-
-    <style>
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(156, 163, 175, 0.5);
-            border-radius: 3px;
-        }
-        .dark .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-        }
-    </style>
+      }
+    }
+  </script>
+  <style>
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(10px);
+    }
+    .dark .glass-effect {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(10px);
+    }
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 3px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #475569;
+    }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-full flex flex-col font-sans antialiased transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-200 min-h-screen flex flex-col font-sans">
 
-    <!-- LOGIN SCREEN MODAL (FULLSCREEN OVERLAY) -->
-    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-95 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-gray-100 dark:border-gray-700">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-500 mb-3">
-                    <i class="fa-solid fa-[#0ea5e9] fa-network-wired text-3xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome to IPAMS</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">IP Address Management System</p>
-            </div>
+  <!-- ========================================== -->
+  <!-- 1. LOGIN SCREEN WITH GOOGLE SIGN-IN        -->
+  <!-- ========================================== -->
+  <div id="loginScreen" class="fixed inset-0 z-50 bg-slate-900 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl border border-slate-700 text-center space-y-6">
+      
+      <div class="inline-flex p-4 rounded-2xl bg-brand-600/10 text-brand-600 dark:text-brand-400 mb-2">
+        <i class="fa-solid fa-network-wired text-4xl"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white">Welcome to IPAMS</h2>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Enterprise IP Address Management System</p>
+      </div>
 
-            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
-                <div id="login-error" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg"></div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Username</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-user"></i></span>
-                        <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none" placeholder="e.g. admin or user">
-                    </div>
-                </div>
+      <!-- Google Sign-In Button -->
+      <div class="pt-4">
+        <button onclick="loginWithGoogle()" class="w-full bg-white dark:bg-slate-700 hover:bg-slate-50 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-100 border border-slate-300 dark:border-slate-600 font-semibold py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-3">
+          <svg class="w-5 h-5" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Sign in with Google</span>
+        </button>
+      </div>
 
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Password</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
-                        <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none" placeholder="••••••••">
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>Sign In</span>
-                </button>
-            </form>
-
-            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400">
-                <p class="font-semibold mb-1">Default Credentials (Fallback / Seed):</p>
-                <p><span class="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">admin / admin123</span> (Admin)</p>
-                <p><span class="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">user / user123</span> (Standard User)</p>
-            </div>
-        </div>
+      <div class="text-[11px] text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-700">
+        <i class="fa-solid fa-shield-halved text-emerald-500 mr-1"></i> Connected to Firebase Authentication
+      </div>
     </div>
+  </div>
 
-    <!-- APP NAVBAR -->
-    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="p-2 bg-brand-600 text-white rounded-lg">
-                    <i class="fa-solid fa-network-wired text-xl"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold leading-none">IPAMS</h1>
-                    <span class="text-xs text-gray-500 dark:text-gray-400">IP Address Management</span>
-                </div>
+  <!-- ========================================== -->
+  <!-- 2. MAIN APP CONTENT (Hidden until login)   -->
+  <!-- ========================================== -->
+  <div id="appContainer" class="hidden flex-1 flex flex-col">
+
+    <!-- TOP NAVBAR -->
+    <header class="sticky top-0 z-30 glass-effect border-b border-slate-200 dark:border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          
+          <!-- Logo & Title -->
+          <div class="flex items-center space-x-3">
+            <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md shadow-brand-500/20">
+              <i class="fa-solid fa-network-wired text-xl"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-xl tracking-tight text-slate-900 dark:text-white">IPAMS</span>
+                <span id="dbStatusBadge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                  <i class="fa-solid fa-database text-[9px] mr-1"></i>Firebase Live
+                </span>
+              </div>
+              <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Enterprise IP Address Management System</p>
+            </div>
+          </div>
+
+          <!-- Right Quick Actions -->
+          <div class="flex items-center space-x-2 sm:space-x-3">
+            <button onclick="openSettingsModal()" title="Manage Departments & Devices" class="px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
+              <i class="fa-solid fa-sliders text-brand-500"></i>
+              <span class="hidden md:inline">Settings</span>
+            </button>
+            
+            <button onclick="openModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium shadow-sm transition flex items-center gap-2">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add IP</span>
+            </button>
+
+            <!-- User Info & Logout -->
+            <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-700">
+              <img id="userAvatar" src="" class="w-8 h-8 rounded-full border border-slate-300 hidden" alt="User Avatar" />
+              <button onclick="logout()" title="Logout" class="p-2 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-sm">
+                <i class="fa-solid fa-right-from-bracket"></i>
+              </button>
             </div>
 
-            <!-- Header Action Controls -->
-            <div class="flex items-center space-x-3">
-                <!-- User Profile & Admin Badge -->
-                <div class="hidden sm:flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full text-xs">
-                    <i class="fa-solid fa-user-circle text-gray-500 dark:text-gray-300 text-sm"></i>
-                    <span id="nav-user-name" class="font-semibold text-gray-700 dark:text-gray-200">User</span>
-                    <span id="nav-user-role" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-500 text-white">Admin</span>
-                </div>
-
-                <!-- Admin Only: User Management Button -->
-                <button id="btn-manage-users" onclick="openUserModal()" class="hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:hover:bg-indigo-900/70 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
-                    <i class="fa-solid fa-users-gear"></i>
-                    <span>Manage Users</span>
-                </button>
-
-                <!-- Admin Only: Settings -->
-                <button id="btn-settings" onclick="openSettingsModal()" class="hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="App Settings">
-                    <i class="fa-solid fa-gear"></i>
-                </button>
-
-                <!-- Dark Mode Toggle -->
-                <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Toggle Dark/Light Mode">
-                    <i id="dark-icon" class="fa-solid fa-moon"></i>
-                </button>
-
-                <!-- Logout -->
-                <button onclick="handleLogout()" class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg" title="Logout">
-                    <i class="fa-solid fa-right-from-bracket"></i>
-                </button>
-            </div>
+            <button id="themeToggle" onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 text-sm">
+              <i class="fa-solid fa-moon dark:hidden"></i>
+              <i class="fa-solid fa-sun hidden dark:block text-amber-400"></i>
+            </button>
+          </div>
         </div>
+      </div>
     </header>
 
-    <!-- MAIN CONTENT CONTAINER -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- DEVICE TYPE BREAKDOWN STATS BAR -->
-        <div>
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center space-x-2">
-                    <i class="fa-solid fa-chart-pie"></i>
-                    <span>Device Distribution Breakdown</span>
-                </h2>
-                <span id="total-ip-count" class="text-xs bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 font-bold px-2.5 py-1 rounded-full">0 IPs Total</span>
-            </div>
-            <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-                <!-- Dynamic breakdown cards inserted here -->
-            </div>
+      <!-- DEVICE COUNTS DASHBOARD CARDS -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Device Counts Breakdown</h3>
+          <span id="totalDeviceCountLabel" class="text-xs font-semibold text-brand-600 dark:text-brand-400">Total Devices: 0</span>
+        </div>
+        <div id="deviceStatsContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <!-- Dynamically Populated Device Type Counter Cards -->
+        </div>
+      </div>
+
+      <!-- FILTER & SEARCH BAR -->
+      <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          
+          <!-- Global Search Field -->
+          <div class="relative flex-1">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+            <input type="text" id="globalSearchInput" oninput="applyFilters()" placeholder="Search by IP Address, User Name, Room, or Remarks..." class="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" />
+          </div>
+
+          <!-- CSV Export & Toggle Chart -->
+          <div class="flex items-center gap-2">
+            <button onclick="exportToCSV()" class="px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-file-csv text-emerald-600"></i> Export CSV
+            </button>
+            <button onclick="toggleChartSection()" class="px-3 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-chart-pie text-brand-500"></i> Visuals
+            </button>
+          </div>
         </div>
 
-        <!-- SEARCH, FILTERS & ACTION CONTROLS BAR -->
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                <!-- Global Search -->
-                <div class="relative lg:col-span-2">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
-                    <input type="text" id="filter-global" oninput="applyFilters()" placeholder="Search IP, Assigned To, Remarks..." class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
+        <!-- Advanced Filter Controls -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-slate-100 dark:border-slate-700/50">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Department</label>
+            <select id="filterDept" onchange="applyFilters()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-brand-500">
+              <option value="">All Departments</option>
+            </select>
+          </div>
 
-                <!-- Dept Filter -->
-                <div>
-                    <select id="filter-dept" onchange="applyFilters()" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                        <option value="">All Departments</option>
-                    </select>
-                </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Device Type</label>
+            <select id="filterDevice" onchange="applyFilters()" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs text-slate-800 dark:text-slate-200 focus:ring-1 focus:ring-brand-500">
+              <option value="">All Device Types</option>
+            </select>
+          </div>
 
-                <!-- Device Type Filter -->
-                <div>
-                    <select id="filter-device" onchange="applyFilters()" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                        <option value="">All Device Types</option>
-                    </select>
-                </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">IP Range Start</label>
+            <input type="text" id="filterIpStart" oninput="applyFilters()" placeholder="e.g. 192.168.1.1" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs focus:ring-1 focus:ring-brand-500" />
+          </div>
 
-                <!-- Actions Button Group -->
-                <div class="flex items-center space-x-2">
-                    <button onclick="openIpModal()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center space-x-1.5">
-                        <i class="fa-solid fa-plus"></i>
-                        <span>Add IP</span>
-                    </button>
-                    <button onclick="openOcrModal()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-3 rounded-lg shadow-sm transition" title="Scan IP via Camera / OCR">
-                        <i class="fa-solid fa-camera"></i>
-                    </button>
-                    <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2 px-3 rounded-lg shadow-sm transition" title="Export CSV">
-                        <i class="fa-solid fa-file-csv"></i>
-                    </button>
-                </div>
-            </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">IP Range End</label>
+            <input type="text" id="filterIpEnd" oninput="applyFilters()" placeholder="e.g. 192.168.1.254" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md py-1.5 px-2.5 text-xs focus:ring-1 focus:ring-brand-500" />
+          </div>
+        </div>
+      </div>
 
-            <!-- IP Range Sub-Filter Collapsible/Inline -->
-            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 text-xs">
-                <span class="font-semibold text-gray-500 dark:text-gray-400">IP Range:</span>
-                <input type="text" id="filter-ip-start" oninput="applyFilters()" placeholder="Start IP (e.g. 192.168.1.1)" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-36">
-                <span>to</span>
-                <input type="text" id="filter-ip-end" oninput="applyFilters()" placeholder="End IP (e.g. 192.168.1.254)" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-36">
-                <button onclick="resetFilters()" class="text-brand-600 dark:text-brand-400 hover:underline ml-auto">Reset Filters</button>
-            </div>
+      <!-- ANALYTICS CHART SECTION -->
+      <div id="chartSection" class="hidden bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm">
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4 flex items-center gap-2">
+          <i class="fa-solid fa-chart-simple text-brand-500"></i> Department-Wise IP Distribution
+        </h3>
+        <div class="h-64 relative">
+          <canvas id="deptDistributionChart"></canvas>
+        </div>
+      </div>
+
+      <!-- MAIN DATA TABLE -->
+      <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-700 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <th class="py-3 px-4 min-w-[150px]">IP Address <span class="text-rose-500">*</span></th>
+                <th class="py-3 px-4 min-w-[160px]">Assigned To</th>
+                <th class="py-3 px-4 min-w-[150px]">Dept / Room</th>
+                <th class="py-3 px-4 min-w-[130px]">Device <span class="text-rose-500">*</span></th>
+                <th class="py-3 px-4 min-w-[120px]">Status</th>
+                <th class="py-3 px-4 min-w-[150px]">Remarks</th>
+                <th class="py-3 px-4 min-w-[100px] text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="ipTableBody" class="divide-y divide-slate-200 dark:divide-slate-700/60 text-sm">
+              <!-- Dynamic rows -->
+            </tbody>
+          </table>
         </div>
 
-        <!-- MAIN DATA TABLE -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse text-sm">
-                    <thead>
-                        <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
-                            <th class="py-3 px-4">IP Address <span class="text-red-500">*</span></th>
-                            <th class="py-3 px-4">Assigned To</th>
-                            <th class="py-3 px-4">Dept / Room</th>
-                            <th class="py-3 px-4">Device <span class="text-red-500">*</span></th>
-                            <th class="py-3 px-4">Status</th>
-                            <th class="py-3 px-4">Remarks</th>
-                            <th class="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ip-table-body" class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-800 dark:text-gray-200">
-                        <!-- Table rows populated dynamically -->
-                    </tbody>
-                </table>
-            </div>
-            <!-- Empty state fallback -->
-            <div id="no-records" class="hidden py-12 text-center text-gray-500 dark:text-gray-400">
-                <i class="fa-solid fa-folder-open text-4xl mb-2 text-gray-300 dark:text-gray-600"></i>
-                <p class="text-base font-medium">No matching IP records found</p>
-                <p class="text-xs text-gray-400">Try adjusting your filter search terms or add a new record.</p>
-            </div>
+        <div id="emptyState" class="hidden p-8 text-center">
+          <div class="w-12 h-12 bg-slate-100 dark:bg-slate-700 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+            <i class="fa-solid fa-folder-open text-xl"></i>
+          </div>
+          <p class="text-slate-600 dark:text-slate-300 font-medium">No matching IP records found</p>
+          <p class="text-xs text-slate-400 mt-1">Try clearing your search query or add a new IP record.</p>
         </div>
 
-        <!-- ANALYTICS CHART SECTION -->
-        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <h3 class="text-base font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center space-x-2">
-                <i class="fa-solid fa-chart-column text-brand-500"></i>
-                <span>Department IP Allocation Analytics</span>
-            </h3>
-            <div class="h-64 relative w-full">
-                <canvas id="deptChart"></canvas>
-            </div>
+        <div class="px-4 py-3 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex items-center justify-between">
+          <span id="recordCountText">Showing 0 of 0 IPs</span>
+          <span class="text-[11px] text-slate-400">* Mandatory fields: IP Address & Device Type</span>
         </div>
-
+      </div>
     </main>
+  </div>
 
-    <!-- FOOTER -->
-    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 text-center text-xs text-gray-500 dark:text-gray-400">
-        IPAMS &copy; 2026 Enterprise IP Management System. Firestore Synced.
-    </footer>
+  <!-- ADD / EDIT IP MODAL -->
+  <div id="ipModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transform transition-all">
+      
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <h3 id="modalTitle" class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-plus-circle text-brand-600"></i> Add New IP Address
+        </h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-    <!-- ========================================== -->
-    <!-- MODALS & OVERLAYS                          -->
-    <!-- ========================================== -->
+      <form id="ipForm" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+        <input type="hidden" id="editDocId" value="" />
 
-    <!-- 1. ADD / EDIT IP RECORD MODAL -->
-    <div id="ip-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
-                <h3 id="ip-modal-title" class="font-bold text-gray-900 dark:text-white">Add New IP Record</h3>
-                <button onclick="closeIpModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <form id="ip-form" onsubmit="saveIpRecord(event)" class="p-6 space-y-4">
-                <input type="hidden" id="ip-doc-id">
-                
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">IP Address <span class="text-red-500">*</span></label>
-                    <input type="text" id="form-ip" required pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$" placeholder="e.g. 192.168.1.50" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Device Type <span class="text-red-500">*</span></label>
-                    <select id="form-device" required class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Assigned To</label>
-                    <input type="text" id="form-assigned" placeholder="e.g. John Doe / Hostname" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Department / Room</label>
-                    <select id="form-dept" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Status</label>
-                    <select id="form-status" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
-                        <option value="Active">Active</option>
-                        <option value="Reserved">Reserved</option>
-                        <option value="Offline">Offline</option>
-                        <option value="Maintenance">Maintenance</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Remarks</label>
-                    <textarea id="form-remarks" rows="2" placeholder="Additional details..." class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
-                </div>
-
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeIpModal()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-sm">Save IP Record</button>
-                </div>
-            </form>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+            IP Address <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="inputIp" required placeholder="e.g. 192.168.1.10" pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" />
         </div>
-    </div>
 
-    <!-- 2. USER MANAGEMENT MODAL (ADMIN ONLY) -->
-    <div id="user-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-indigo-50 dark:bg-indigo-950/40">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-users-gear text-indigo-600 dark:text-indigo-400"></i>
-                    <span>User Accounts Management (Firestore)</span>
-                </h3>
-                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            
-            <div class="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
-                <!-- Create/Edit Form Box -->
-                <div class="bg-gray-50 dark:bg-gray-700/40 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-                    <h4 id="user-form-title" class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 uppercase">Add New Account</h4>
-                    <form id="user-form" onsubmit="saveUserAccount(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <input type="hidden" id="user-doc-id">
-                        
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Username *</label>
-                            <input type="text" id="user-input-username" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              Device Type <span class="text-rose-500">*</span>
+            </label>
+            <select id="inputDevice" required class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+            </select>
+          </div>
 
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Password *</label>
-                            <input type="password" id="user-input-password" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Full Name *</label>
-                            <input type="text" id="user-input-name" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Role & Status</label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <select id="user-input-role" class="py-1.5 px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                    <option value="User">Standard User</option>
-                                    <option value="Admin">Admin</option>
-                                </select>
-                                <select id="user-input-status" class="py-1.5 px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                                    <option value="Active">Active</option>
-                                    <option value="Disabled">Disabled</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="sm:col-span-2 flex justify-end space-x-2 pt-1">
-                            <button type="button" onclick="resetUserForm()" class="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs text-gray-600 dark:text-gray-300">Reset</button>
-                            <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-xs flex items-center space-x-1">
-                                <i class="fa-solid fa-user-plus"></i>
-                                <span id="user-submit-btn-text">Save User</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Existing Users Table -->
-                <div>
-                    <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System User Accounts</h4>
-                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-gray-100 dark:bg-gray-700/60 font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
-                                <tr>
-                                    <th class="p-2.5">Username</th>
-                                    <th class="p-2.5">Name</th>
-                                    <th class="p-2.5">Role</th>
-                                    <th class="p-2.5">Status</th>
-                                    <th class="p-2.5 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
-                                <!-- User list dynamic -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Status</label>
+            <select id="inputStatus" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+              <option value="Active">Active</option>
+              <option value="Reserved">Reserved</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
         </div>
-    </div>
 
-    <!-- 3. SETTINGS MODAL (DEPT / DEVICE TYPES CONFIG) -->
-    <div id="settings-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
-                <h3 class="font-bold text-gray-900 dark:text-white">App Configuration</h3>
-                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="p-6 space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Departments (Comma Separated)</label>
-                    <textarea id="settings-depts" rows="3" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Device Types (Comma Separated)</label>
-                    <textarea id="settings-devices" rows="3" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
-                </div>
-                <div class="flex justify-end space-x-2 pt-2">
-                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300">Cancel</button>
-                    <button type="button" onclick="saveSettings()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-sm">Save Config</button>
-                </div>
-            </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">User's Name (Assigned To)</label>
+          <input type="text" id="inputUserName" placeholder="e.g. Rahul Sharma" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" />
         </div>
-    </div>
 
-    <!-- 4. OCR / CAMERA MODAL -->
-    <div id="ocr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
-            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-purple-50 dark:bg-purple-950/40">
-                <h3 class="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
-                    <i class="fa-solid fa-camera text-purple-600"></i>
-                    <span>Scan IP Address (OCR)</span>
-                </h3>
-                <button onclick="closeOcrModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div class="p-6 space-y-4 text-center">
-                <div class="relative bg-gray-100 dark:bg-gray-700 rounded-lg h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden">
-                    <video id="ocr-video" class="w-full h-full object-cover hidden" autoplay playsinline></video>
-                    <div id="ocr-placeholder" class="text-gray-400 text-xs px-4">
-                        <i class="fa-solid fa-file-image text-3xl mb-2"></i>
-                        <p>Upload an image or start camera scan to extract IP addresses automatically.</p>
-                    </div>
-                </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Department</label>
+            <select id="inputDept" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500">
+            </select>
+          </div>
 
-                <div id="ocr-status" class="text-xs font-semibold text-purple-600 dark:text-purple-400 min-h-[1.25rem]"></div>
-
-                <div class="flex flex-col sm:flex-row gap-2">
-                    <input type="file" id="ocr-file-input" accept="image/*" class="hidden" onchange="handleOcrFileUpload(event)">
-                    <button onclick="document.getElementById('ocr-file-input').click()" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-medium">
-                        <i class="fa-solid fa-[#0ea5e9] fa-upload mr-1"></i> Upload Image
-                    </button>
-                    <button onclick="runMockOcrScan()" class="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Quick Test IP
-                    </button>
-                </div>
-            </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Room No</label>
+            <input type="text" id="inputRoom" placeholder="e.g. 204-B" class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none" />
+          </div>
         </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Remarks</label>
+          <textarea id="inputRemarks" rows="2" placeholder="Optional notes, MAC address, switch port..." class="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-brand-500 focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">
+            Cancel
+          </button>
+          <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow-sm transition">
+            Save Record
+          </button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <!-- MAIN APP JAVASCRIPT LOGIC -->
-    <script>
-        // --- 1. FIREBASE INITIALIZATION ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyDOIx8H1h7y2mpEoZubwksubqweVBuAzBI",
-            authDomain: "ipams-database.firebaseapp.com",
-            projectId: "ipams-database",
-            storageBucket: "ipams-database.firebasestorage.app",
-            messagingSenderId: "875335708106",
-            appId: "1:875335708106:web:15e70aed8875b680593333"
-        };
+  <!-- MANAGE SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-brand-600"></i> Manage Departments & Device Types
+        </h3>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
 
-        let db = null;
-        let isFirestoreAvailable = false;
+      <div class="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+        <div>
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Departments (Saved in Database)</h4>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="newDeptInput" placeholder="Add new Department..." class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs" />
+            <button onclick="addDepartmentSetting()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Add</button>
+          </div>
+          <div id="deptList" class="space-y-1.5"></div>
+        </div>
 
-        try {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            isFirestoreAvailable = true;
-            console.log("Firebase initialized successfully.");
-        } catch (e) {
-            console.warn("Firestore initialization error. Operating in offline/fallback memory mode.", e);
-        }
+        <div class="pt-4 border-t border-slate-200 dark:border-slate-700">
+          <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Device Types (Saved in Database)</h4>
+          <div class="flex gap-2 mb-3">
+            <input type="text" id="newDeviceInput" placeholder="Add new Device Type..." class="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs" />
+            <button onclick="addDeviceSetting()" class="bg-brand-600 hover:bg-brand-700 text-white px-3 py-1.5 rounded-lg text-xs font-medium">Add</button>
+          </div>
+          <div id="deviceList" class="space-y-1.5"></div>
+        </div>
+      </div>
 
-        // --- 2. FALLBACK SEED DATA & IN-MEMORY STORES ---
-        const SEED_USERS = [
-            { id: "seed_admin", username: "admin", password: "admin123", name: "System Administrator", role: "Admin", status: "Active" },
-            { id: "seed_user", username: "user", password: "user123", name: "Standard Network Tech", role: "User", status: "Active" }
-        ];
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+        <span class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <i class="fa-solid fa-cloud-arrow-up mr-1"></i> Changes auto-sync to Firebase DB
+        </span>
+        <button onclick="closeSettingsModal()" class="bg-slate-700 hover:bg-slate-800 text-white px-4 py-1.5 rounded-lg text-xs font-medium">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
 
-        const DEFAULT_CONFIG = {
-            departments: ["IT Department", "HR & Admin", "Finance", "Engineering", "Server Room", "Reception"],
-            deviceTypes: ["Desktop PC", "Laptop", "Server", "Printer", "Switch", "Router", "Access Point", "IP Phone", "CCTV Camera"]
-        };
+  <!-- MAIN SCRIPT LOGIC -->
+  <script>
+    // ==========================================
+    // 1. FIREBASE INITIALIZATION
+    // ==========================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyDOIx8H1h7y2mpEoZubwksubqweVBuAzBI",
+      authDomain: "ipams-database.firebaseapp.com",
+      projectId: "ipams-database",
+      storageBucket: "ipams-database.firebasestorage.app",
+      messagingSenderId: "875335708106",
+      appId: "1:875335708106:web:15e70aed8875b680593333"
+    };
 
-        const SEED_IPS = [
-            { id: "ip_1", ip: "192.168.1.10", device: "Router", assigned: "Core Gateway", dept: "Server Room", status: "Active", remarks: "Primary Gateway Router" },
-            { id: "ip_2", ip: "192.168.1.25", device: "Printer", assigned: "HR HP LaserJet", dept: "HR & Admin", status: "Active", remarks: "Shared color printer" },
-            { id: "ip_3", ip: "192.168.1.102", device: "Desktop PC", assigned: "John Server Tech", dept: "IT Department", status: "Active", remarks: "Workstation" },
-            { id: "ip_4", ip: "192.168.1.200", device: "Server", assigned: "DB Primary Node", dept: "Server Room", status: "Active", remarks: "PostgreSQL Production" }
-        ];
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let isFirebaseActive = false;
 
-        // Active State
-        let currentUser = null;
-        let localUsers = [...SEED_USERS];
-        let localIps = [...SEED_IPS];
-        let appConfig = { ...DEFAULT_CONFIG };
-        let deptChartInstance = null;
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      db = firebase.firestore();
+      auth = firebase.auth();
+      isFirebaseActive = true;
+    } catch (err) {
+      console.warn("Firebase Init Error:", err);
+      isFirebaseActive = false;
+    }
 
-        // --- 3. INITIALIZATION & AUTH HANDLERS ---
-        window.onload = function() {
-            checkDarkModePreference();
-            initApp();
-        };
+    // Default Configuration Lists
+    let departments = ["IT Infrastructure", "Software Engineering", "HR", "Finance", "Operations", "Administration", "Marketing"];
+    let deviceTypes = ["Desktop PC", "Laptop", "Server", "Network Switch", "Router", "Printer", "IP Camera", "Access Point", "Firewall"];
 
-        async function initApp() {
-            // Check session storage
-            const savedUser = sessionStorage.getItem('ipams_logged_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
+    const deviceIconsMap = {
+      "Desktop PC": "fa-desktop",
+      "Laptop": "fa-laptop",
+      "Server": "fa-server",
+      "Network Switch": "fa-network-wired",
+      "Router": "fa-route",
+      "Printer": "fa-print",
+      "IP Camera": "fa-video",
+      "Access Point": "fa-wifi",
+      "Firewall": "fa-shield-halved"
+    };
+
+    let ipRecords = [];
+    let filteredRecords = [];
+    let deptChart = null;
+
+    // ==========================================
+    // 2. AUTHENTICATION (Google Sign-In)
+    // ==========================================
+    window.addEventListener('DOMContentLoaded', () => {
+      if (isFirebaseActive && auth) {
+        auth.onAuthStateChanged(async (user) => {
+          if (user) {
+            currentUser = user;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('appContainer').classList.remove('hidden');
+
+            // Show User Profile Pic if available
+            if (user.photoURL) {
+              const avatar = document.getElementById('userAvatar');
+              avatar.src = user.photoURL;
+              avatar.classList.remove('hidden');
             }
 
-            if (isFirestoreAvailable) {
-                await syncConfigFromFirestore();
-                await syncUsersFromFirestore();
-                await syncIpsFromFirestore();
-            } else {
-                populateConfigDropdowns();
-            }
+            // Sync user data to Firestore
+            await db.collection("users").doc(user.uid).set({
+              email: user.email,
+              name: user.displayName,
+              photoURL: user.photoURL,
+              lastLogin: new Date().toISOString()
+            }, { merge: true });
 
-            if (currentUser) {
-                hideLoginScreen();
-            } else {
-                showLoginScreen();
-            }
-        }
-
-        function showLoginScreen() {
-            document.getElementById('login-screen').classList.remove('hidden');
-        }
-
-        function hideLoginScreen() {
-            document.getElementById('login-screen').classList.add('hidden');
-            updateUserNavUI();
-            renderDashboard();
-        }
-
-        async function handleLogin(e) {
-            e.preventDefault();
-            const uInput = document.getElementById('login-username').value.trim();
-            const pInput = document.getElementById('login-password').value.trim();
-            const errDiv = document.getElementById('login-error');
-            errDiv.classList.add('hidden');
-
-            let matchedUser = null;
-
-            if (isFirestoreAvailable) {
-                try {
-                    const snapshot = await db.collection('users').where('username', '==', uInput).get();
-                    if (!snapshot.empty) {
-                        const uDoc = snapshot.docs[0];
-                        const data = uDoc.data();
-                        if (data.password === pInput) {
-                            matchedUser = { id: uDoc.id, ...data };
-                        }
-                    }
-                } catch (err) {
-                    console.error("Firestore user search error:", err);
-                }
-            }
-
-            // Fallback to local user array if not found or DB offline
-            if (!matchedUser) {
-                matchedUser = localUsers.find(u => u.username === uInput && u.password === pInput);
-            }
-
-            if (matchedUser) {
-                if (matchedUser.status === 'Disabled') {
-                    errDiv.textContent = "Account disabled. Please contact administrator.";
-                    errDiv.classList.remove('hidden');
-                    return;
-                }
-
-                currentUser = matchedUser;
-                sessionStorage.setItem('ipams_logged_user', JSON.stringify(currentUser));
-                hideLoginScreen();
-            } else {
-                errDiv.textContent = "Invalid username or password.";
-                errDiv.classList.remove('hidden');
-            }
-        }
-
-        function handleLogout() {
+            initAppData();
+          } else {
             currentUser = null;
-            sessionStorage.removeItem('ipams_logged_user');
-            showLoginScreen();
-        }
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('appContainer').classList.add('hidden');
+          }
+        });
+      }
+    });
 
-        function updateUserNavUI() {
-            if (!currentUser) return;
-            document.getElementById('nav-user-name').textContent = currentUser.name || currentUser.username;
-            const roleBadge = document.getElementById('nav-user-role');
-            roleBadge.textContent = currentUser.role;
+    async function loginWithGoogle() {
+      if (!isFirebaseActive || !auth) {
+        alert("Firebase is not initialized.");
+        return;
+      }
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        await auth.signInWithPopup(provider);
+      } catch (err) {
+        alert("Google Sign-In Error: " + err.message);
+      }
+    }
 
-            const btnManageUsers = document.getElementById('btn-manage-users');
-            const btnSettings = document.getElementById('btn-settings');
+    async function logout() {
+      if (auth) {
+        await auth.signOut();
+      }
+    }
 
-            if (currentUser.role === 'Admin') {
-                roleBadge.className = "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-500 text-white";
-                btnManageUsers.classList.remove('hidden');
-                btnSettings.classList.remove('hidden');
-            } else {
-                roleBadge.className = "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-500 text-white";
-                btnManageUsers.classList.add('hidden');
-                btnSettings.classList.add('hidden');
-            }
-        }
+    // ==========================================
+    // 3. INITIALIZE APP DATA & LISTENERS
+    // ==========================================
+    async function initAppData() {
+      await loadSettingsFromFirebase();
+      
+      if (isFirebaseActive && db) {
+        db.collection("ip_records").onSnapshot((snapshot) => {
+          ipRecords = [];
+          snapshot.forEach((doc) => {
+            ipRecords.push({ id: doc.id, ...doc.data() });
+          });
+          applyFilters();
+        }, (error) => {
+          console.error("Firestore Error:", error);
+          applyFilters();
+        });
+      }
 
-        // --- 4. FIRESTORE SYNC & SEEDING ---
-        async function syncConfigFromFirestore() {
-            try {
-                const doc = await db.collection('settings').doc('app_config').get();
-                if (doc.exists) {
-                    appConfig = doc.data();
-                } else {
-                    // Seed initial config
-                    await db.collection('settings').doc('app_config').set(DEFAULT_CONFIG);
-                    appConfig = { ...DEFAULT_CONFIG };
-                }
-            } catch (err) {
-                console.error("Error syncing app config:", err);
-            }
-            populateConfigDropdowns();
-        }
+      initChart();
+    }
 
-        async function syncUsersFromFirestore() {
-            if (!isFirestoreAvailable) return;
-            try {
-                const snapshot = await db.collection('users').get();
-                if (snapshot.empty) {
-                    // Seed initial default users into Firestore
-                    for (const user of SEED_USERS) {
-                        const { id, ...userData } = user;
-                        await db.collection('users').doc(id).set(userData);
-                    }
-                    localUsers = [...SEED_USERS];
-                } else {
-                    localUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                }
-            } catch (err) {
-                console.error("Error syncing users from Firestore:", err);
-            }
-        }
-
-        async function syncIpsFromFirestore() {
-            if (!isFirestoreAvailable) return;
-            try {
-                const snapshot = await db.collection('ip_records').get();
-                if (snapshot.empty) {
-                    // Seed initial IP data
-                    for (const ipRec of SEED_IPS) {
-                        const { id, ...ipData } = ipRec;
-                        await db.collection('ip_records').doc(id).set(ipData);
-                    }
-                    localIps = [...SEED_IPS];
-                } else {
-                    localIps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                }
-            } catch (err) {
-                console.error("Error syncing IP records from Firestore:", err);
-            }
-        }
-
-        function populateConfigDropdowns() {
-            const deptFilter = document.getElementById('filter-dept');
-            const formDept = document.getElementById('form-dept');
-            const devFilter = document.getElementById('filter-device');
-            const formDev = document.getElementById('form-device');
-
-            const currentDeptFilterVal = deptFilter.value;
-            const currentDevFilterVal = devFilter.value;
-
-            deptFilter.innerHTML = '<option value="">All Departments</option>';
-            formDept.innerHTML = '<option value="">(None / General)</option>';
-            appConfig.departments.forEach(d => {
-                deptFilter.innerHTML += `<option value="${d}">${d}</option>`;
-                formDept.innerHTML += `<option value="${d}">${d}</option>`;
+    async function loadSettingsFromFirebase() {
+      if (isFirebaseActive && db) {
+        try {
+          const doc = await db.collection("settings").doc("app_config").get();
+          if (doc.exists) {
+            const data = doc.data();
+            if (data.departments && Array.isArray(data.departments)) departments = data.departments;
+            if (data.deviceTypes && Array.isArray(data.deviceTypes)) deviceTypes = data.deviceTypes;
+          } else {
+            await db.collection("settings").doc("app_config").set({
+              departments: departments,
+              deviceTypes: deviceTypes
             });
-            deptFilter.value = currentDeptFilterVal;
+          }
+        } catch (err) {
+          console.error("Error loading settings:", err);
+        }
+      }
+      populateDropdowns();
+    }
 
-            devFilter.innerHTML = '<option value="">All Device Types</option>';
-            formDev.innerHTML = '<option value="">Select Device Type *</option>';
-            appConfig.deviceTypes.forEach(dev => {
-                devFilter.innerHTML += `<option value="${dev}">${dev}</option>`;
-                formDev.innerHTML += `<option value="${dev}">${dev}</option>`;
-            });
-            devFilter.value = currentDevFilterVal;
+    async function saveSettingsToFirebase() {
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("settings").doc("app_config").set({
+            departments: departments,
+            deviceTypes: deviceTypes
+          });
+        } catch (err) {
+          console.error("Error saving settings:", err);
+        }
+      }
+      populateDropdowns();
+      renderDeviceStatsCards();
+      updateChartData();
+    }
+
+    function populateDropdowns() {
+      const filterDept = document.getElementById('filterDept');
+      const filterDevice = document.getElementById('filterDevice');
+      const inputDept = document.getElementById('inputDept');
+      const inputDevice = document.getElementById('inputDevice');
+
+      const currentFilterDept = filterDept.value;
+      const currentFilterDevice = filterDevice.value;
+
+      filterDept.innerHTML = '<option value="">All Departments</option>';
+      inputDept.innerHTML = '<option value="">-- None / General --</option>';
+      departments.forEach(d => {
+        filterDept.innerHTML += `<option value="${d}">${d}</option>`;
+        inputDept.innerHTML += `<option value="${d}">${d}</option>`;
+      });
+
+      filterDevice.innerHTML = '<option value="">All Device Types</option>';
+      inputDevice.innerHTML = '<option value="">-- Select Device Type --</option>';
+      deviceTypes.forEach(dev => {
+        filterDevice.innerHTML += `<option value="${dev}">${dev}</option>`;
+        inputDevice.innerHTML += `<option value="${dev}">${dev}</option>`;
+      });
+
+      filterDept.value = currentFilterDept;
+      filterDevice.value = currentFilterDevice;
+    }
+
+    // ==========================================
+    // 4. TABLE RENDERING & INLINE EDITS
+    // ==========================================
+    function renderTable() {
+      const tbody = document.getElementById('ipTableBody');
+      const emptyState = document.getElementById('emptyState');
+      const recordCountText = document.getElementById('recordCountText');
+
+      tbody.innerHTML = '';
+
+      if (filteredRecords.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+      }
+
+      recordCountText.innerText = `Showing ${filteredRecords.length} of ${ipRecords.length} IPs`;
+
+      filteredRecords.forEach((rec) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50/80 dark:hover:bg-slate-700/40 transition-colors";
+
+        let statusBadge = '';
+        if (rec.status === 'Active') {
+          statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">Active</span>`;
+        } else if (rec.status === 'Reserved') {
+          statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800">Reserved</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">Inactive</span>`;
         }
 
-        // --- 5. RENDER DASHBOARD, BREAKDOWN STATS & ANALYTICS ---
-        function renderDashboard() {
-            const filteredIps = getFilteredIps();
-            renderStatsBreakdown(filteredIps);
-            renderTable(filteredIps);
-            renderChart(filteredIps);
+        tr.innerHTML = `
+          <td class="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100">${rec.ip || '-'}</td>
+          <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">${rec.userName || '<span class="text-slate-400 italic">Unassigned</span>'}</td>
+          <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+            <div>${rec.dept || '-'}</div>
+            ${rec.room ? `<div class="text-[11px] text-slate-400"><i class="fa-solid fa-door-open text-[10px] mr-1"></i>${rec.room}</div>` : ''}
+          </td>
+          <td class="py-3 px-4 text-slate-700 dark:text-slate-300">${rec.device || '-'}</td>
+          <td class="py-3 px-4 cursor-pointer" onclick="quickToggleStatus('${rec.id}')" title="Click to quick toggle status">
+            ${statusBadge}
+          </td>
+          <td class="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs max-w-[180px] truncate" title="${rec.remarks || ''}">${rec.remarks || '-'}</td>
+          <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+            <button onclick="editRecord('${rec.id}')" class="p-1.5 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 rounded transition" title="Edit Record">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button onclick="deleteRecord('${rec.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 rounded transition" title="Delete Record">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+      renderDeviceStatsCards();
+      updateChartData();
+    }
+
+    async function quickToggleStatus(id) {
+      const rec = ipRecords.find(r => r.id === id);
+      if (!rec) return;
+
+      const statuses = ["Active", "Reserved", "Inactive"];
+      const nextIndex = (statuses.indexOf(rec.status) + 1) % statuses.length;
+      const newStatus = statuses[nextIndex];
+
+      rec.status = newStatus;
+
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("ip_records").doc(id).update({ status: newStatus });
+        } catch(e) { console.error("Update failed", e); }
+      }
+
+      applyFilters();
+    }
+
+    // ==========================================
+    // 5. SEARCH & FILTERING LOGIC
+    // ==========================================
+    function applyFilters() {
+      const search = document.getElementById('globalSearchInput').value.toLowerCase().trim();
+      const dept = document.getElementById('filterDept').value;
+      const device = document.getElementById('filterDevice').value;
+      const ipStart = document.getElementById('filterIpStart').value.trim();
+      const ipEnd = document.getElementById('filterIpEnd').value.trim();
+
+      const startNum = ipStart ? ipToLong(ipStart) : null;
+      const endNum = ipEnd ? ipToLong(ipEnd) : null;
+
+      filteredRecords = ipRecords.filter(item => {
+        const matchesSearch = !search || (
+          (item.ip && item.ip.toLowerCase().includes(search)) ||
+          (item.userName && item.userName.toLowerCase().includes(search)) ||
+          (item.room && item.room.toLowerCase().includes(search)) ||
+          (item.remarks && item.remarks.toLowerCase().includes(search))
+        );
+
+        const matchesDept = !dept || item.dept === dept;
+        const matchesDevice = !device || item.device === device;
+
+        let matchesRange = true;
+        if (startNum !== null || endNum !== null) {
+          const itemNum = ipToLong(item.ip);
+          if (itemNum !== null) {
+            if (startNum !== null && itemNum < startNum) matchesRange = false;
+            if (endNum !== null && itemNum > endNum) matchesRange = false;
+          } else {
+            matchesRange = false;
+          }
         }
 
-        function renderStatsBreakdown(ips) {
-            const container = document.getElementById('stats-container');
-            document.getElementById('total-ip-count').textContent = `${localIps.length} Total Registered IPs`;
+        return matchesSearch && matchesDept && matchesDevice && matchesRange;
+      });
 
-            // Calculate breakdown for each configured device type
-            const counts = {};
-            appConfig.deviceTypes.forEach(type => counts[type] = 0);
-            
-            ips.forEach(rec => {
-                if (counts[rec.device] !== undefined) {
-                    counts[rec.device]++;
-                } else {
-                    counts[rec.device] = 1;
-                }
-            });
+      renderTable();
+    }
 
-            const iconMap = {
-                "Desktop PC": "fa-desktop",
-                "Laptop": "fa-laptop",
-                "Server": "fa-server",
-                "Printer": "fa-print",
-                "Switch": "fa-network-wired",
-                "Router": "fa-route",
-                "Access Point": "fa-wifi",
-                "IP Phone": "fa-phone-volume",
-                "CCTV Camera": "fa-video"
-            };
+    function ipToLong(ip) {
+      const parts = ip.split('.');
+      if (parts.length !== 4) return null;
+      let num = 0;
+      for (let i = 0; i < 4; i++) {
+        const part = parseInt(parts[i], 10);
+        if (isNaN(part) || part < 0 || part > 255) return null;
+        num = (num << 8) + part;
+      }
+      return num >>> 0;
+    }
 
-            let html = '';
-            appConfig.deviceTypes.forEach(dev => {
-                const count = counts[dev] || 0;
-                const icon = iconMap[dev] || 'fa-microchip';
-                html += `
-                    <div class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center space-x-3">
-                        <div class="p-2.5 rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400">
-                            <i class="fa-solid ${icon} text-lg"></i>
-                        </div>
-                        <div>
-                            <div class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">${dev}</div>
-                            <div class="text-lg font-bold text-gray-900 dark:text-white leading-none mt-0.5">${count}</div>
-                        </div>
-                    </div>
-                `;
-            });
+    // ==========================================
+    // 6. DEVICE STATS & CHART UPDATES
+    // ==========================================
+    function renderDeviceStatsCards() {
+      const container = document.getElementById('deviceStatsContainer');
+      document.getElementById('totalDeviceCountLabel').innerText = `Total Devices: ${ipRecords.length}`;
 
-            container.innerHTML = html;
+      const counts = {};
+      deviceTypes.forEach(dev => counts[dev] = 0);
+      counts['Other / Unspecified'] = 0;
+
+      ipRecords.forEach(r => {
+        if (r.device && counts[r.device] !== undefined) {
+          counts[r.device]++;
+        } else {
+          counts['Other / Unspecified']++;
         }
+      });
 
-        function renderTable(ips) {
-            const tbody = document.getElementById('ip-table-body');
-            const noRec = document.getElementById('no-records');
+      container.innerHTML = '';
+      Object.keys(counts).forEach(devName => {
+        if (counts[devName] === 0 && devName === 'Other / Unspecified') return;
 
-            if (ips.length === 0) {
-                tbody.innerHTML = '';
-                noRec.classList.remove('hidden');
-                return;
-            }
-            noRec.classList.add('hidden');
+        const iconClass = deviceIconsMap[devName] || 'fa-microchip';
+        const card = document.createElement('div');
+        card.className = "bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700/80 shadow-sm flex items-center justify-between";
+        card.innerHTML = `
+          <div class="truncate mr-2">
+            <p class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 truncate" title="${devName}">${devName}</p>
+            <h4 class="text-xl font-bold text-slate-900 dark:text-white mt-0.5">${counts[devName]}</h4>
+          </div>
+          <div class="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400 flex items-center justify-center flex-shrink-0">
+            <i class="fa-solid ${iconClass} text-sm"></i>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
 
-            const statusColors = {
-                'Active': 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
-                'Reserved': 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
-                'Offline': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
-                'Maintenance': 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
-            };
-
-            let html = '';
-            ips.forEach(item => {
-                const sBadge = statusColors[item.status] || 'bg-gray-100 text-gray-800';
-                html += `
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
-                        <td class="py-3 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">${escapeHtml(item.ip)}</td>
-                        <td class="py-3 px-4 font-medium">${escapeHtml(item.assigned || '-')}</td>
-                        <td class="py-3 px-4 text-gray-600 dark:text-gray-300">${escapeHtml(item.dept || '-')}</td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
-                                ${escapeHtml(item.device)}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4">
-                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${sBadge}">
-                                ${escapeHtml(item.status || 'Active')}
-                            </span>
-                        </td>
-                        <td class="py-3 px-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">${escapeHtml(item.remarks || '-')}</td>
-                        <td class="py-3 px-4 text-right space-x-1">
-                            <button onclick="editIpRecord('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded" title="Edit Record">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button onclick="deleteIpRecord('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded" title="Delete Record">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
+    function initChart() {
+      const ctx = document.getElementById('deptDistributionChart').getContext('2d');
+      deptChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Assigned IPs',
+            data: [],
+            backgroundColor: '#3b82f6',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
         }
+      });
+      updateChartData();
+    }
 
-        function renderChart(ips) {
-            const ctx = document.getElementById('deptChart').getContext('2d');
-            
-            // Count distribution by Department
-            const deptCounts = {};
-            appConfig.departments.forEach(d => deptCounts[d] = 0);
-            deptCounts["Unassigned"] = 0;
+    function updateChartData() {
+      if (!deptChart) return;
+      const counts = {};
+      departments.forEach(d => counts[d] = 0);
+      counts['Unassigned'] = 0;
 
-            ips.forEach(r => {
-                const dKey = r.dept && appConfig.departments.includes(r.dept) ? r.dept : "Unassigned";
-                deptCounts[dKey] = (deptCounts[dKey] || 0) + 1;
-            });
-
-            const labels = Object.keys(deptCounts);
-            const dataVals = Object.values(deptCounts);
-
-            if (deptChartInstance) {
-                deptChartInstance.destroy();
-            }
-
-            const isDark = document.documentElement.classList.contains('dark');
-            const textColor = isDark ? '#9ca3af' : '#4b5563';
-
-            deptChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Assigned IP Addresses',
-                        data: dataVals,
-                        backgroundColor: 'rgba(14, 165, 233, 0.7)',
-                        borderColor: '#0ea5e9',
-                        borderWidth: 1.5,
-                        borderRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        x: {
-                            ticks: { color: textColor, font: { size: 11 } },
-                            grid: { display: false }
-                        },
-                        y: {
-                            ticks: { color: textColor, stepSize: 1 },
-                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
-                        }
-                    }
-                }
-            });
+      ipRecords.forEach(r => {
+        if (r.dept && counts[r.dept] !== undefined) {
+          counts[r.dept]++;
+        } else {
+          counts['Unassigned']++;
         }
+      });
 
-        // --- 6. SEARCH & FILTERING LOGIC ---
-        function getFilteredIps() {
-            const globalQuery = document.getElementById('filter-global').value.toLowerCase().trim();
-            const deptVal = document.getElementById('filter-dept').value;
-            const deviceVal = document.getElementById('filter-device').value;
-            const ipStart = document.getElementById('filter-ip-start').value.trim();
-            const ipEnd = document.getElementById('filter-ip-end').value.trim();
+      deptChart.data.labels = Object.keys(counts);
+      deptChart.data.datasets[0].data = Object.values(counts);
+      deptChart.update();
+    }
 
-            const startNum = ipToNum(ipStart);
-            const endNum = ipToNum(ipEnd);
+    function toggleChartSection() {
+      document.getElementById('chartSection').classList.toggle('hidden');
+    }
 
-            return localIps.filter(item => {
-                // Global Match
-                if (globalQuery) {
-                    const matchGlobal = item.ip.toLowerCase().includes(globalQuery) ||
-                        (item.assigned && item.assigned.toLowerCase().includes(globalQuery)) ||
-                        (item.remarks && item.remarks.toLowerCase().includes(globalQuery));
-                    if (!matchGlobal) return false;
-                }
+    // ==========================================
+    // 7. MODALS & CRUD HANDLERS
+    // ==========================================
+    function openModal() {
+      document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-plus-circle text-brand-600"></i> Add New IP Address';
+      document.getElementById('editDocId').value = '';
+      document.getElementById('ipForm').reset();
+      document.getElementById('ipModal').classList.remove('hidden');
+    }
 
-                // Dept Match
-                if (deptVal && item.dept !== deptVal) return false;
+    function closeModal() {
+      document.getElementById('ipModal').classList.add('hidden');
+    }
 
-                // Device Match
-                if (deviceVal && item.device !== deviceVal) return false;
+    function editRecord(id) {
+      const rec = ipRecords.find(r => r.id === id);
+      if (!rec) return;
 
-                // IP Range Filter
-                if (startNum || endNum) {
-                    const targetNum = ipToNum(item.ip);
-                    if (!targetNum) return false;
-                    if (startNum && targetNum < startNum) return false;
-                    if (endNum && targetNum > endNum) return false;
-                }
+      document.getElementById('modalTitle').innerHTML = '<i class="fa-solid fa-pen-to-square text-brand-600"></i> Edit IP Address Record';
+      document.getElementById('editDocId').value = rec.id;
+      document.getElementById('inputIp').value = rec.ip || '';
+      document.getElementById('inputUserName').value = rec.userName || '';
+      document.getElementById('inputDept').value = rec.dept || '';
+      document.getElementById('inputRoom').value = rec.room || '';
+      document.getElementById('inputDevice').value = rec.device || '';
+      document.getElementById('inputStatus').value = rec.status || 'Active';
+      document.getElementById('inputRemarks').value = rec.remarks || '';
 
-                return true;
-            });
+      document.getElementById('ipModal').classList.remove('hidden');
+    }
+
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      const docId = document.getElementById('editDocId').value;
+      const recordData = {
+        ip: document.getElementById('inputIp').value.trim(),
+        userName: document.getElementById('inputUserName').value.trim(),
+        dept: document.getElementById('inputDept').value,
+        room: document.getElementById('inputRoom').value.trim(),
+        device: document.getElementById('inputDevice').value,
+        status: document.getElementById('inputStatus').value,
+        remarks: document.getElementById('inputRemarks').value.trim(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (isFirebaseActive && db) {
+        try {
+          if (docId) {
+            await db.collection("ip_records").doc(docId).update(recordData);
+          } else {
+            await db.collection("ip_records").add(recordData);
+          }
+        } catch (err) {
+          alert("Firebase write error: " + err.message);
         }
+      }
 
-        function applyFilters() {
-            renderDashboard();
+      closeModal();
+    }
+
+    async function deleteRecord(id) {
+      if (!confirm("Are you sure you want to delete this IP address record?")) return;
+
+      if (isFirebaseActive && db) {
+        try {
+          await db.collection("ip_records").doc(id).delete();
+        } catch (err) {
+          alert("Error deleting record: " + err.message);
         }
+      }
+    }
 
-        function resetFilters() {
-            document.getElementById('filter-global').value = '';
-            document.getElementById('filter-dept').value = '';
-            document.getElementById('filter-device').value = '';
-            document.getElementById('filter-ip-start').value = '';
-            document.getElementById('filter-ip-end').value = '';
-            renderDashboard();
-        }
+    // ==========================================
+    // 8. MANAGE SETTINGS (Departments & Devices)
+    // ==========================================
+    function openSettingsModal() {
+      renderSettingsLists();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    }
 
-        function ipToNum(ipStr) {
-            if (!ipStr) return null;
-            const parts = ipStr.split('.').map(Number);
-            if (parts.length !== 4 || parts.some(isNaN)) return null;
-            return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
-        }
+    function closeSettingsModal() {
+      document.getElementById('settingsModal').classList.add('hidden');
+    }
 
-        // --- 7. IP RECORD CRUD MODAL ACTIONS ---
-        function openIpModal(record = null) {
-            const modal = document.getElementById('ip-modal');
-            const title = document.getElementById('ip-modal-title');
-            document.getElementById('ip-form').reset();
+    function renderSettingsLists() {
+      const deptList = document.getElementById('deptList');
+      const deviceList = document.getElementById('deviceList');
 
-            if (record) {
-                title.textContent = 'Edit IP Record';
-                document.getElementById('ip-doc-id').value = record.id;
-                document.getElementById('form-ip').value = record.ip;
-                document.getElementById('form-device').value = record.device;
-                document.getElementById('form-assigned').value = record.assigned || '';
-                document.getElementById('form-dept').value = record.dept || '';
-                document.getElementById('form-status').value = record.status || 'Active';
-                document.getElementById('form-remarks').value = record.remarks || '';
-            } else {
-                title.textContent = 'Add New IP Record';
-                document.getElementById('ip-doc-id').value = '';
-            }
-            modal.classList.remove('hidden');
-        }
+      deptList.innerHTML = departments.map((d, i) => `
+        <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded text-xs">
+          <span>${d}</span>
+          <button onclick="removeDepartmentSetting(${i})" class="text-rose-500 hover:text-rose-700">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
 
-        function closeIpModal() {
-            document.getElementById('ip-modal').classList.add('hidden');
-        }
+      deviceList.innerHTML = deviceTypes.map((dev, i) => `
+        <div class="flex items-center justify-between bg-slate-100 dark:bg-slate-700/50 px-3 py-1.5 rounded text-xs">
+          <span>${dev}</span>
+          <button onclick="removeDeviceSetting(${i})" class="text-rose-500 hover:text-rose-700">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      `).join('');
+    }
 
-        async function saveIpRecord(e) {
-            e.preventDefault();
-            const docId = document.getElementById('ip-doc-id').value;
-            const ipData = {
-                ip: document.getElementById('form-ip').value.trim(),
-                device: document.getElementById('form-device').value,
-                assigned: document.getElementById('form-assigned').value.trim(),
-                dept: document.getElementById('form-dept').value,
-                status: document.getElementById('form-status').value,
-                remarks: document.getElementById('form-remarks').value.trim()
-            };
+    async function addDepartmentSetting() {
+      const input = document.getElementById('newDeptInput');
+      const val = input.value.trim();
+      if (val && !departments.includes(val)) {
+        departments.push(val);
+        input.value = '';
+        renderSettingsLists();
+        await saveSettingsToFirebase();
+      }
+    }
 
-            if (isFirestoreAvailable) {
-                try {
-                    if (docId) {
-                        await db.collection('ip_records').doc(docId).update(ipData);
-                    } else {
-                        await db.collection('ip_records').add(ipData);
-                    }
-                    await syncIpsFromFirestore();
-                } catch (err) {
-                    console.error("Error saving IP to Firestore:", err);
-                }
-            } else {
-                if (docId) {
-                    const idx = localIps.findIndex(i => i.id === docId);
-                    if (idx !== -1) localIps[idx] = { id: docId, ...ipData };
-                } else {
-                    localIps.push({ id: 'ip_' + Date.now(), ...ipData });
-                }
-            }
+    async function removeDepartmentSetting(index) {
+      departments.splice(index, 1);
+      renderSettingsLists();
+      await saveSettingsToFirebase();
+    }
 
-            closeIpModal();
-            renderDashboard();
-        }
+    async function addDeviceSetting() {
+      const input = document.getElementById('newDeviceInput');
+      const val = input.value.trim();
+      if (val && !deviceTypes.includes(val)) {
+        deviceTypes.push(val);
+        input.value = '';
+        renderSettingsLists();
+        await saveSettingsToFirebase();
+      }
+    }
 
-        function editIpRecord(id) {
-            const record = localIps.find(i => i.id === id);
-            if (record) openIpModal(record);
-        }
+    async function removeDeviceSetting(index) {
+      deviceTypes.splice(index, 1);
+      renderSettingsLists();
+      await saveSettingsToFirebase();
+    }
 
-        async function deleteIpRecord(id) {
-            if (!confirm("Are you sure you want to delete this IP record?")) return;
+    // ==========================================
+    // 9. CSV EXPORT & DARK MODE
+    // ==========================================
+    function exportToCSV() {
+      if (filteredRecords.length === 0) {
+        alert("No IP records to export.");
+        return;
+      }
 
-            if (isFirestoreAvailable) {
-                try {
-                    await db.collection('ip_records').doc(id).delete();
-                    await syncIpsFromFirestore();
-                } catch (err) {
-                    console.error("Error deleting IP record:", err);
-                }
-            } else {
-                localIps = localIps.filter(i => i.id !== id);
-            }
-            renderDashboard();
-        }
+      const headers = ["IP Address", "Assigned To", "Department", "Room No", "Device Type", "Status", "Remarks"];
+      const rows = filteredRecords.map(r => [
+        `"${r.ip || ''}"`,
+        `"${r.userName || ''}"`,
+        `"${r.dept || ''}"`,
+        `"${r.room || ''}"`,
+        `"${r.device || ''}"`,
+        `"${r.status || ''}"`,
+        `"${(r.remarks || '').replace(/"/g, '""')}"`
+      ]);
 
-        // --- 8. USER MANAGEMENT MODAL ACTIONS (ADMIN ONLY) ---
-        function openUserModal() {
-            if (!currentUser || currentUser.role !== 'Admin') {
-                alert('Access restricted to Administrators.');
-                return;
-            }
-            resetUserForm();
-            renderUsersTable();
-            document.getElementById('user-modal').classList.remove('hidden');
-        }
+      const csvContent = "data:text/csv;charset=utf-8," + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `IPAMS_Export_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
 
-        function closeUserModal() {
-            document.getElementById('user-modal').classList.add('hidden');
-        }
-
-        function resetUserForm() {
-            document.getElementById('user-form').reset();
-            document.getElementById('user-doc-id').value = '';
-            document.getElementById('user-form-title').textContent = 'Add New Account';
-            document.getElementById('user-submit-btn-text').textContent = 'Save User';
-        }
-
-        function renderUsersTable() {
-            const tbody = document.getElementById('user-table-body');
-            let html = '';
-
-            localUsers.forEach(u => {
-                const isSelf = currentUser && currentUser.id === u.id;
-                const statusBadge = u.status === 'Active' 
-                    ? '<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-[10px] font-bold">Active</span>'
-                    : '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">Disabled</span>';
-                
-                html += `
-                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td class="p-2.5 font-semibold font-mono">${escapeHtml(u.username)}</td>
-                        <td class="p-2.5">${escapeHtml(u.name)}</td>
-                        <td class="p-2.5 font-medium">${escapeHtml(u.role)}</td>
-                        <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5 text-right space-x-1">
-                            <button onclick="editUserAccount('${u.id}')" class="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded" title="Edit User">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                            ${!isSelf ? `
-                                <button onclick="deleteUserAccount('${u.id}')" class="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded" title="Delete User">
-                                    <i class="fa-solid fa-trash"></i>
-                                </button>
-                            ` : '<span class="text-[10px] text-gray-400 italic px-1">(You)</span>'}
-                        </td>
-                    </tr>
-                `;
-            });
-
-            tbody.innerHTML = html;
-        }
-
-        function editUserAccount(id) {
-            const user = localUsers.find(u => u.id === id);
-            if (!user) return;
-
-            document.getElementById('user-doc-id').value = user.id;
-            document.getElementById('user-input-username').value = user.username;
-            document.getElementById('user-input-password').value = user.password;
-            document.getElementById('user-input-name').value = user.name;
-            document.getElementById('user-input-role').value = user.role;
-            document.getElementById('user-input-status').value = user.status || 'Active';
-
-            document.getElementById('user-form-title').textContent = 'Edit User Account';
-            document.getElementById('user-submit-btn-text').textContent = 'Update User';
-        }
-
-        async function saveUserAccount(e) {
-            e.preventDefault();
-            const docId = document.getElementById('user-doc-id').value;
-            const userData = {
-                username: document.getElementById('user-input-username').value.trim(),
-                password: document.getElementById('user-input-password').value.trim(),
-                name: document.getElementById('user-input-name').value.trim(),
-                role: document.getElementById('user-input-role').value,
-                status: document.getElementById('user-input-status').value
-            };
-
-            if (isFirestoreAvailable) {
-                try {
-                    if (docId) {
-                        await db.collection('users').doc(docId).update(userData);
-                    } else {
-                        await db.collection('users').add(userData);
-                    }
-                    await syncUsersFromFirestore();
-                } catch (err) {
-                    console.error("Error writing user to Firestore:", err);
-                }
-            } else {
-                if (docId) {
-                    const idx = localUsers.findIndex(u => u.id === docId);
-                    if (idx !== -1) localUsers[idx] = { id: docId, ...userData };
-                } else {
-                    localUsers.push({ id: 'user_' + Date.now(), ...userData });
-                }
-            }
-
-            resetUserForm();
-            renderUsersTable();
-        }
-
-        async function deleteUserAccount(id) {
-            if (!confirm("Are you sure you want to delete this user account?")) return;
-
-            if (isFirestoreAvailable) {
-                try {
-                    await db.collection('users').doc(id).delete();
-                    await syncUsersFromFirestore();
-                } catch (err) {
-                    console.error("Error deleting user from Firestore:", err);
-                }
-            } else {
-                localUsers = localUsers.filter(u => u.id !== id);
-            }
-            renderUsersTable();
-        }
-
-        // --- 9. APP SETTINGS (DEPT / DEVICE TYPES DB SYNC) ---
-        function openSettingsModal() {
-            document.getElementById('settings-depts').value = appConfig.departments.join(', ');
-            document.getElementById('settings-devices').value = appConfig.deviceTypes.join(', ');
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.add('hidden');
-        }
-
-        async function saveSettings() {
-            const deptsRaw = document.getElementById('settings-depts').value;
-            const devRaw = document.getElementById('settings-devices').value;
-
-            const newDepts = deptsRaw.split(',').map(s => s.trim()).filter(Boolean);
-            const newDevs = devRaw.split(',').map(s => s.trim()).filter(Boolean);
-
-            appConfig.departments = newDepts;
-            appConfig.deviceTypes = newDevs;
-
-            if (isFirestoreAvailable) {
-                try {
-                    await db.collection('settings').doc('app_config').set(appConfig);
-                } catch (err) {
-                    console.error("Error saving config settings to Firestore:", err);
-                }
-            }
-
-            populateConfigDropdowns();
-            closeSettingsModal();
-            renderDashboard();
-        }
-
-        // --- 10. OCR CAMERA / IMAGE SCANNER ---
-        function openOcrModal() {
-            document.getElementById('ocr-status').textContent = '';
-            document.getElementById('ocr-modal').classList.remove('hidden');
-        }
-
-        function closeOcrModal() {
-            document.getElementById('ocr-modal').classList.add('hidden');
-        }
-
-        async function handleOcrFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const statusEl = document.getElementById('ocr-status');
-            statusEl.textContent = 'Processing OCR scan on image...';
-
-            try {
-                const result = await Tesseract.recognize(file, 'eng');
-                const text = result.data.text;
-                
-                // Extract IP Pattern
-                const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/;
-                const match = text.match(ipRegex);
-
-                if (match) {
-                    statusEl.textContent = `IP Found: ${match[0]}`;
-                    closeOcrModal();
-                    openIpModal();
-                    document.getElementById('form-ip').value = match[0];
-                } else {
-                    statusEl.textContent = 'No valid IP address pattern detected in image.';
-                }
-            } catch (err) {
-                console.error("OCR Error:", err);
-                statusEl.textContent = 'Failed to scan image. Please try another image.';
-            }
-        }
-
-        function runMockOcrScan() {
-            const statusEl = document.getElementById('ocr-status');
-            statusEl.textContent = 'Simulating instant hardware scan...';
-            setTimeout(() => {
-                const mockIp = `192.168.1.${Math.floor(Math.random() * 200) + 10}`;
-                closeOcrModal();
-                openIpModal();
-                document.getElementById('form-ip').value = mockIp;
-                document.getElementById('form-remarks').value = 'Scanned via Camera OCR';
-            }, 600);
-        }
-
-        // --- 11. EXPORT TO CSV ---
-        function exportCSV() {
-            const ips = getFilteredIps();
-            if (ips.length === 0) {
-                alert('No data to export.');
-                return;
-            }
-
-            let csvContent = "data:text/csv;charset=utf-8,IP Address,Assigned To,Department,Device Type,Status,Remarks\n";
-            ips.forEach(r => {
-                const row = [
-                    `"${r.ip || ''}"`,
-                    `"${r.assigned || ''}"`,
-                    `"${r.dept || ''}"`,
-                    `"${r.device || ''}"`,
-                    `"${r.status || 'Active'}"`,
-                    `"${(r.remarks || '').replace(/"/g, '""')}"`
-                ].join(',');
-                csvContent += row + "\n";
-            });
-
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `IPAMS_Export_${new Date().toISOString().slice(0,10)}.csv`);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
-
-        // --- 12. UTILS & DARK MODE TOGGLE ---
-        function toggleDarkMode() {
-            const html = document.documentElement;
-            const icon = document.getElementById('dark-icon');
-
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                icon.className = 'fa-solid fa-moon';
-                localStorage.setItem('theme', 'light');
-            } else {
-                html.classList.add('dark');
-                icon.className = 'fa-solid fa-sun';
-                localStorage.setItem('theme', 'dark');
-            }
-            if (currentUser) renderDashboard();
-        }
-
-        function checkDarkModePreference() {
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
-                document.getElementById('dark-icon').className = 'fa-solid fa-sun';
-            }
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
-        }
-    </script>
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+    }
+  </script>
 </body>
 </html>
