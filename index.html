@@ -1,855 +1,1267 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IP Address Management System (IPAMS)</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a',
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IPAMS - Enterprise IP Address Management System</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            900: '#0c4a6e'
+                        }
+                    }
+                }
             }
-          }
         }
-      }
-    }
-  </script>
-  <!-- FontAwesome Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <!-- Tesseract.js OCR -->
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    body { font-family: 'Inter', sans-serif; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
-    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.5); border-radius: 3px; }
-  </style>
+    </script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tesseract.js for OCR -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.1.1/dist/tesseract.min.js"></script>
+    <!-- Firebase JS SDK (v9 Compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 3px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+    </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+<body class="bg-gray-50 text-gray-800 dark:bg-gray-900 dark:text-gray-100 min-h-full flex flex-col font-sans antialiased transition-colors duration-200">
 
-  <!-- LOGIN MODAL / SCREEN -->
-  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-8 relative">
-      <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-600 text-white shadow-lg shadow-brand-500/30 mb-4">
-          <i class="fa-solid fa-network-wired text-3xl"></i>
+    <!-- LOGIN SCREEN MODAL (FULLSCREEN OVERLAY) -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-95 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-8 border border-gray-100 dark:border-gray-700">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-500 mb-3">
+                    <i class="fa-solid fa-[#0ea5e9] fa-network-wired text-3xl"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 dark:text-white">Welcome to IPAMS</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">IP Address Management System</p>
+            </div>
+
+            <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                <div id="login-error" class="hidden p-3 bg-red-100 border border-red-300 text-red-700 text-sm rounded-lg"></div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Username</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-user"></i></span>
+                        <input type="text" id="login-username" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none" placeholder="e.g. admin or user">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Password</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" id="login-password" required class="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none" placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg shadow-md transition-all flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    <span>Sign In</span>
+                </button>
+            </form>
+
+            <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700 text-xs text-center text-gray-500 dark:text-gray-400">
+                <p class="font-semibold mb-1">Default Credentials (Fallback / Seed):</p>
+                <p><span class="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">admin / admin123</span> (Admin)</p>
+                <p><span class="font-mono bg-gray-100 dark:bg-gray-700 px-1 rounded">user / user123</span> (Standard User)</p>
+            </div>
         </div>
-        <h1 class="text-2xl font-bold tracking-tight">Welcome to IPAMS</h1>
-        <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">IP Address Management System</p>
-      </div>
-
-      <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Username</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-              <i class="fa-solid fa-user text-sm"></i>
-            </span>
-            <input type="text" id="loginUsername" required value="admin" placeholder="Enter username" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
-          </div>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Password</label>
-          <div class="relative">
-            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">
-              <i class="fa-solid fa-lock text-sm"></i>
-            </span>
-            <input type="password" id="loginPassword" required value="admin123" placeholder="Enter password" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/50 focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
-          </div>
-        </div>
-
-        <div id="loginError" class="hidden text-xs text-red-500 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 rounded-lg p-3">
-          <i class="fa-solid fa-circle-exclamation mr-1.5"></i> Invalid username or password.
-        </div>
-
-        <button type="submit" class="w-full py-3 px-4 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl shadow-lg shadow-brand-600/30 transition-all text-sm flex items-center justify-center gap-2">
-          <span>Sign In to Dashboard</span>
-          <i class="fa-solid fa-arrow-right text-xs"></i>
-        </button>
-      </form>
-
-      <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 text-center text-xs text-slate-400">
-        Default Demo Credentials: <span class="font-mono text-slate-600 dark:text-slate-300">admin</span> / <span class="font-mono text-slate-600 dark:text-slate-300">admin123</span>
-      </div>
     </div>
-  </div>
 
-  <!-- MAIN APP WRAPPER -->
-  <div id="appContainer" class="hidden min-h-screen flex flex-col">
-    <!-- NAVBAR -->
-    <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md">
-            <i class="fa-solid fa-network-wired text-lg"></i>
-          </div>
-          <div>
-            <h1 class="font-bold text-lg leading-tight">IPAMS</h1>
-            <p class="text-xs text-slate-500 dark:text-slate-400">IP Management Hub</p>
-          </div>
+    <!-- APP NAVBAR -->
+    <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-brand-600 text-white rounded-lg">
+                    <i class="fa-solid fa-network-wired text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold leading-none">IPAMS</h1>
+                    <span class="text-xs text-gray-500 dark:text-gray-400">IP Address Management</span>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center space-x-3">
+                <!-- User Profile & Admin Badge -->
+                <div class="hidden sm:flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-full text-xs">
+                    <i class="fa-solid fa-user-circle text-gray-500 dark:text-gray-300 text-sm"></i>
+                    <span id="nav-user-name" class="font-semibold text-gray-700 dark:text-gray-200">User</span>
+                    <span id="nav-user-role" class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-500 text-white">Admin</span>
+                </div>
+
+                <!-- Admin Only: User Management Button -->
+                <button id="btn-manage-users" onclick="openUserModal()" class="hidden bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:hover:bg-indigo-900/70 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700 px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center space-x-1.5">
+                    <i class="fa-solid fa-users-gear"></i>
+                    <span>Manage Users</span>
+                </button>
+
+                <!-- Admin Only: Settings -->
+                <button id="btn-settings" onclick="openSettingsModal()" class="hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="App Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg" title="Toggle Dark/Light Mode">
+                    <i id="dark-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Logout -->
+                <button onclick="handleLogout()" class="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
         </div>
-
-        <div class="flex items-center gap-2 sm:gap-3">
-          <button onclick="openModal('recordModal')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm transition">
-            <i class="fa-solid fa-plus"></i> <span class="hidden sm:inline">Add IP Record</span>
-          </button>
-          
-          <button onclick="openModal('ocrModal')" class="bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-xs sm:text-sm font-semibold px-3 py-2 rounded-xl flex items-center gap-2 transition" title="Scan IP from Image">
-            <i class="fa-solid fa-camera text-brand-500"></i> <span class="hidden md:inline">OCR Scan</span>
-          </button>
-
-          <button onclick="openModal('settingsModal')" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition" title="Settings">
-            <i class="fa-solid fa-gear"></i>
-          </button>
-
-          <button onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition" title="Toggle Theme">
-            <i class="fa-solid fa-moon dark:hidden"></i>
-            <i class="fa-solid fa-sun hidden dark:block"></i>
-          </button>
-
-          <div class="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1"></div>
-
-          <button onclick="handleLogout()" class="px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition flex items-center gap-1.5">
-            <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Logout</span>
-          </button>
-        </div>
-      </div>
     </header>
 
-    <!-- CONTENT BODY -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
-      <!-- TOP DEVICE BREAKDOWN CARDS -->
-      <section>
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Device Breakdown Summary</h2>
-          <span id="syncBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Firebase Connected
-          </span>
-        </div>
-        <div id="deviceCountCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <!-- Dynamic cards injected here -->
-        </div>
-      </section>
-
-      <!-- FILTERS & SEARCH BAR -->
-      <section class="bg-white dark:bg-slate-800 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-700 space-y-4">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Global Search -->
-          <div class="relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-            <input type="text" id="searchInput" oninput="applyFilters()" placeholder="Search Name, IP, Remarks..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-          </div>
-
-          <!-- Department Filter -->
-          <div>
-            <select id="deptFilter" onchange="applyFilters()" class="w-full py-2 px-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-              <option value="">All Departments</option>
-            </select>
-          </div>
-
-          <!-- Device Filter -->
-          <div>
-            <select id="deviceFilter" onchange="applyFilters()" class="w-full py-2 px-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-              <option value="">All Device Types</option>
-            </select>
-          </div>
-
-          <!-- Status Filter -->
-          <div>
-            <select id="statusFilter" onchange="applyFilters()" class="w-full py-2 px-3 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-              <option value="">All Statuses</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Reserved">Reserved</option>
-            </select>
-          </div>
+        <!-- DEVICE TYPE BREAKDOWN STATS BAR -->
+        <div>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Device Distribution Breakdown</span>
+                </h2>
+                <span id="total-ip-count" class="text-xs bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 font-bold px-2.5 py-1 rounded-full">0 IPs Total</span>
+            </div>
+            <div id="stats-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                <!-- Dynamic breakdown cards inserted here -->
+            </div>
         </div>
 
-        <!-- IP Subnet Range Search -->
-        <div class="pt-3 border-t border-slate-100 dark:border-slate-700/60 flex flex-wrap items-center gap-3 text-xs">
-          <span class="font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <i class="fa-solid fa-sliders"></i> Subnet Range Filter:
-          </span>
-          <input type="text" id="rangeStart" placeholder="Start IP (e.g. 192.168.1.1)" oninput="applyFilters()" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs w-40 outline-none">
-          <span>to</span>
-          <input type="text" id="rangeEnd" placeholder="End IP (e.g. 192.168.1.50)" oninput="applyFilters()" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs w-40 outline-none">
-          
-          <div class="ml-auto flex items-center gap-2">
-            <button onclick="exportCSV()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium text-xs transition flex items-center gap-1.5">
-              <i class="fa-solid fa-file-csv text-emerald-500"></i> Export CSV
-            </button>
-            <button onclick="clearFilters()" class="px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg font-medium text-xs transition">
-              Clear Filters
-            </button>
-          </div>
-        </div>
-      </section>
+        <!-- SEARCH, FILTERS & ACTION CONTROLS BAR -->
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                <!-- Global Search -->
+                <div class="relative lg:col-span-2">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="filter-global" oninput="applyFilters()" placeholder="Search IP, Assigned To, Remarks..." class="w-full pl-9 pr-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
 
-      <!-- IP RECORDS TABLE -->
-      <section class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div class="overflow-x-auto custom-scrollbar">
-          <table class="w-full text-left border-collapse text-xs sm:text-sm">
-            <thead>
-              <tr class="bg-slate-100/70 dark:bg-slate-700/40 text-slate-500 dark:text-slate-400 font-semibold border-b border-slate-200 dark:border-slate-700">
-                <th class="py-3 px-4">IP Address <span class="text-red-500">*</span></th>
-                <th class="py-3 px-4">Assigned To</th>
-                <th class="py-3 px-4">Dept / Room</th>
-                <th class="py-3 px-4">Device <span class="text-red-500">*</span></th>
-                <th class="py-3 px-4">Status</th>
-                <th class="py-3 px-4">Remarks</th>
-                <th class="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody id="recordsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/50">
-              <!-- Dynamically populated rows -->
-            </tbody>
-          </table>
-        </div>
-        <div id="emptyState" class="hidden p-8 text-center text-slate-400">
-          <i class="fa-solid fa-folder-open text-4xl mb-2"></i>
-          <p class="text-sm font-medium">No matching IP records found.</p>
-        </div>
-      </section>
+                <!-- Dept Filter -->
+                <div>
+                    <select id="filter-dept" onchange="applyFilters()" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
 
-      <!-- ANALYTICS SECTION -->
-      <section class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Device Allocation Chart</h3>
-          <div class="h-56 relative flex items-center justify-center">
-            <canvas id="deviceChart"></canvas>
-          </div>
+                <!-- Device Type Filter -->
+                <div>
+                    <select id="filter-device" onchange="applyFilters()" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="">All Device Types</option>
+                    </select>
+                </div>
+
+                <!-- Actions Button Group -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="openIpModal()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-3 rounded-lg shadow-sm transition flex items-center justify-center space-x-1.5">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>Add IP</span>
+                    </button>
+                    <button onclick="openOcrModal()" class="bg-purple-600 hover:bg-purple-700 text-white text-sm py-2 px-3 rounded-lg shadow-sm transition" title="Scan IP via Camera / OCR">
+                        <i class="fa-solid fa-camera"></i>
+                    </button>
+                    <button onclick="exportCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm py-2 px-3 rounded-lg shadow-sm transition" title="Export CSV">
+                        <i class="fa-solid fa-file-csv"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- IP Range Sub-Filter Collapsible/Inline -->
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-700 text-xs">
+                <span class="font-semibold text-gray-500 dark:text-gray-400">IP Range:</span>
+                <input type="text" id="filter-ip-start" oninput="applyFilters()" placeholder="Start IP (e.g. 192.168.1.1)" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-36">
+                <span>to</span>
+                <input type="text" id="filter-ip-end" oninput="applyFilters()" placeholder="End IP (e.g. 192.168.1.254)" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 w-36">
+                <button onclick="resetFilters()" class="text-brand-600 dark:text-brand-400 hover:underline ml-auto">Reset Filters</button>
+            </div>
         </div>
-        <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Department IP Usage Chart</h3>
-          <div class="h-56 relative flex items-center justify-center">
-            <canvas id="deptChart"></canvas>
-          </div>
+
+        <!-- MAIN DATA TABLE -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-gray-700/50 text-gray-600 dark:text-gray-300 font-semibold border-b border-gray-200 dark:border-gray-700">
+                            <th class="py-3 px-4">IP Address <span class="text-red-500">*</span></th>
+                            <th class="py-3 px-4">Assigned To</th>
+                            <th class="py-3 px-4">Dept / Room</th>
+                            <th class="py-3 px-4">Device <span class="text-red-500">*</span></th>
+                            <th class="py-3 px-4">Status</th>
+                            <th class="py-3 px-4">Remarks</th>
+                            <th class="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ip-table-body" class="divide-y divide-gray-200 dark:divide-gray-700 text-gray-800 dark:text-gray-200">
+                        <!-- Table rows populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <!-- Empty state fallback -->
+            <div id="no-records" class="hidden py-12 text-center text-gray-500 dark:text-gray-400">
+                <i class="fa-solid fa-folder-open text-4xl mb-2 text-gray-300 dark:text-gray-600"></i>
+                <p class="text-base font-medium">No matching IP records found</p>
+                <p class="text-xs text-gray-400">Try adjusting your filter search terms or add a new record.</p>
+            </div>
         </div>
-      </section>
+
+        <!-- ANALYTICS CHART SECTION -->
+        <div class="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <h3 class="text-base font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center space-x-2">
+                <i class="fa-solid fa-chart-column text-brand-500"></i>
+                <span>Department IP Allocation Analytics</span>
+            </h3>
+            <div class="h-64 relative w-full">
+                <canvas id="deptChart"></canvas>
+            </div>
+        </div>
 
     </main>
-  </div>
 
-  <!-- ADD / EDIT RECORD MODAL -->
-  <div id="recordModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-lg p-6 relative">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-        <h3 id="modalTitle" class="font-bold text-base">Add New IP Record</h3>
-        <button onclick="closeModal('recordModal')" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
+    <!-- FOOTER -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 text-center text-xs text-gray-500 dark:text-gray-400">
+        IPAMS &copy; 2026 Enterprise IP Management System. Firestore Synced.
+    </footer>
 
-      <form id="recordForm" onsubmit="saveRecord(event)" class="space-y-4 mt-4">
-        <input type="hidden" id="recordId">
+    <!-- ========================================== -->
+    <!-- MODALS & OVERLAYS                          -->
+    <!-- ========================================== -->
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">IP Address *</label>
-            <input type="text" id="formIp" required placeholder="e.g. 192.168.1.10" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Device Type *</label>
-            <select id="formDevice" required class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none"></select>
-          </div>
+    <!-- 1. ADD / EDIT IP RECORD MODAL -->
+    <div id="ip-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <h3 id="ip-modal-title" class="font-bold text-gray-900 dark:text-white">Add New IP Record</h3>
+                <button onclick="closeIpModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="ip-form" onsubmit="saveIpRecord(event)" class="p-6 space-y-4">
+                <input type="hidden" id="ip-doc-id">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">IP Address <span class="text-red-500">*</span></label>
+                    <input type="text" id="form-ip" required pattern="^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.){3}(25[0-5]|(2[0-4]|1\d|[1-9]|)\d)$" placeholder="e.g. 192.168.1.50" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Device Type <span class="text-red-500">*</span></label>
+                    <select id="form-device" required class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Assigned To</label>
+                    <input type="text" id="form-assigned" placeholder="e.g. John Doe / Hostname" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Department / Room</label>
+                    <select id="form-dept" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Status</label>
+                    <select id="form-status" class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none">
+                        <option value="Active">Active</option>
+                        <option value="Reserved">Reserved</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Remarks</label>
+                    <textarea id="form-remarks" rows="2" placeholder="Additional details..." class="w-full py-2 px-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeIpModal()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-sm">Save IP Record</button>
+                </div>
+            </form>
         </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Assigned To (User Name)</label>
-            <input type="text" id="formUser" placeholder="e.g. John Doe" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Dept / Room</label>
-            <select id="formDept" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none"></select>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status</label>
-            <select id="formStatus" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Reserved">Reserved</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Remarks</label>
-            <input type="text" id="formRemarks" placeholder="Optional notes..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 outline-none">
-          </div>
-        </div>
-
-        <div class="pt-3 flex justify-end gap-2 border-t border-slate-200 dark:border-slate-700">
-          <button type="button" onclick="closeModal('recordModal')" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl text-xs font-medium">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold shadow-md">Save Record</button>
-        </div>
-      </form>
     </div>
-  </div>
 
-  <!-- OCR SCANNER MODAL -->
-  <div id="ocrModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-md p-6 relative">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-camera text-brand-500"></i> OCR IP Scanner</h3>
-        <button onclick="closeModal('ocrModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-      </div>
+    <!-- 2. USER MANAGEMENT MODAL (ADMIN ONLY) -->
+    <div id="user-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-3xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-indigo-50 dark:bg-indigo-950/40">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-users-gear text-indigo-600 dark:text-indigo-400"></i>
+                    <span>User Accounts Management (Firestore)</span>
+                </h3>
+                <button onclick="closeUserModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 overflow-y-auto space-y-6 flex-1 custom-scrollbar">
+                <!-- Create/Edit Form Box -->
+                <div class="bg-gray-50 dark:bg-gray-700/40 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                    <h4 id="user-form-title" class="text-sm font-bold text-gray-700 dark:text-gray-200 mb-3 uppercase">Add New Account</h4>
+                    <form id="user-form" onsubmit="saveUserAccount(event)" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <input type="hidden" id="user-doc-id">
+                        
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Username *</label>
+                            <input type="text" id="user-input-username" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
 
-      <div class="space-y-4 mt-4 text-xs">
-        <p class="text-slate-500 dark:text-slate-400">Upload an image of a sticker, label, or server terminal to automatically detect IP addresses using Tesseract OCR.</p>
-        
-        <input type="file" id="ocrFileInput" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-brand-50 dark:file:bg-slate-700 file:text-brand-700 dark:file:text-brand-300 hover:file:bg-brand-100 cursor-pointer">
-        
-        <div id="ocrStatus" class="hidden p-3 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-center font-medium">
-          <i class="fa-solid fa-spinner fa-spin mr-2"></i> Analyzing Image for IPs...
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Password *</label>
+                            <input type="password" id="user-input-password" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Full Name *</label>
+                            <input type="text" id="user-input-name" required class="w-full py-1.5 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">Role & Status</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <select id="user-input-role" class="py-1.5 px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <option value="User">Standard User</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                                <select id="user-input-status" class="py-1.5 px-2 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                                    <option value="Active">Active</option>
+                                    <option value="Disabled">Disabled</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-2 flex justify-end space-x-2 pt-1">
+                            <button type="button" onclick="resetUserForm()" class="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-xs text-gray-600 dark:text-gray-300">Reset</button>
+                            <button type="submit" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-xs flex items-center space-x-1">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <span id="user-submit-btn-text">Save User</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Users Table -->
+                <div>
+                    <h4 class="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">System User Accounts</h4>
+                    <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-gray-100 dark:bg-gray-700/60 font-semibold text-gray-600 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                                <tr>
+                                    <th class="p-2.5">Username</th>
+                                    <th class="p-2.5">Name</th>
+                                    <th class="p-2.5">Role</th>
+                                    <th class="p-2.5">Status</th>
+                                    <th class="p-2.5 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- User list dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
-
-        <div id="ocrResult" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-slate-50 dark:bg-slate-900/40 space-y-2">
-          <span class="font-semibold text-slate-400 uppercase tracking-wider text-[10px]">Detected IP:</span>
-          <div id="ocrDetectedIp" class="text-base font-mono font-bold text-brand-500">192.168.1.1</div>
-          <button onclick="useDetectedIp()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow transition">Use Detected IP</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- SETTINGS MODAL -->
-  <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 w-full max-w-lg p-6 relative">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-        <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-sliders text-brand-500"></i> App Config & Settings</h3>
-        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="space-y-5 mt-4 text-xs">
-        <div>
-          <label class="block font-semibold mb-1 text-slate-600 dark:text-slate-300">Manage Departments (Comma separated)</label>
-          <textarea id="settingsDepts" rows="3" class="w-full p-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-brand-500"></textarea>
+    <!-- 3. SETTINGS MODAL (DEPT / DEVICE TYPES CONFIG) -->
+    <div id="settings-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-700/50">
+                <h3 class="font-bold text-gray-900 dark:text-white">App Configuration</h3>
+                <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Departments (Comma Separated)</label>
+                    <textarea id="settings-depts" rows="3" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase mb-1">Device Types (Comma Separated)</label>
+                    <textarea id="settings-devices" rows="3" class="w-full py-2 px-3 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeSettingsModal()" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300">Cancel</button>
+                    <button type="button" onclick="saveSettings()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white font-medium rounded-lg text-sm">Save Config</button>
+                </div>
+            </div>
         </div>
-
-        <div>
-          <label class="block font-semibold mb-1 text-slate-600 dark:text-slate-300">Manage Device Types (Comma separated)</label>
-          <textarea id="settingsDevices" rows="3" class="w-full p-2.5 bg-slate-50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-xl outline-none focus:ring-2 focus:ring-brand-500"></textarea>
-        </div>
-
-        <div class="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
-          <button onclick="closeModal('settingsModal')" class="px-4 py-2 bg-slate-100 dark:bg-slate-700 rounded-xl font-medium">Cancel</button>
-          <button onclick="saveSettings()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-semibold shadow">Save Config</button>
-        </div>
-      </div>
     </div>
-  </div>
 
-  <!-- FIREBASE SCRIPTS -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInWithCustomToken, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    <!-- 4. OCR / CAMERA MODAL -->
+    <div id="ocr-modal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-black bg-opacity-50 p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-purple-50 dark:bg-purple-950/40">
+                <h3 class="font-bold text-gray-900 dark:text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-camera text-purple-600"></i>
+                    <span>Scan IP Address (OCR)</span>
+                </h3>
+                <button onclick="closeOcrModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-4 text-center">
+                <div class="relative bg-gray-100 dark:bg-gray-700 rounded-lg h-48 flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600 overflow-hidden">
+                    <video id="ocr-video" class="w-full h-full object-cover hidden" autoplay playsinline></video>
+                    <div id="ocr-placeholder" class="text-gray-400 text-xs px-4">
+                        <i class="fa-solid fa-file-image text-3xl mb-2"></i>
+                        <p>Upload an image or start camera scan to extract IP addresses automatically.</p>
+                    </div>
+                </div>
 
-    // Standardized Firebase Config
-    const firebaseConfig = {
-      apiKey: "AIzaSyDOIx8H1h7y2mpEoZubwksubqweVBuAzBI",
-      authDomain: "ipams-database.firebaseapp.com",
-      projectId: "ipams-database",
-      storageBucket: "ipams-database.firebasestorage.app",
-      messagingSenderId: "875335708106",
-      appId: "1:875335708106:web:15e70aed8875b680593333"
-    };
+                <div id="ocr-status" class="text-xs font-semibold text-purple-600 dark:text-purple-400 min-h-[1.25rem]"></div>
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ipams-default';
-
-    // App State
-    window.appState = {
-      records: [],
-      config: {
-        departments: ["IT Department", "HR", "Finance", "Executive", "Server Room"],
-        deviceTypes: ["Desktop", "Laptop", "Server", "Printer", "Router", "IP Phone"]
-      },
-      user: null,
-      db: null,
-      auth: null,
-      appId: appId,
-      deviceChart: null,
-      deptChart: null
-    };
-
-    // Initialize Firebase
-    try {
-      const app = initializeApp(firebaseConfig);
-      window.appState.db = getFirestore(app);
-      window.appState.auth = getAuth(app);
-
-      // Authenticate
-      const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-      if (token) {
-        signInWithCustomToken(window.appState.auth, token).catch(() => signInAnonymously(window.appState.auth));
-      } else {
-        signInAnonymously(window.appState.auth);
-      }
-    } catch (err) {
-      console.warn("Firebase fallback to local memory mode:", err);
-    }
-
-    // Attach sync listener once authenticated
-    if (window.appState.auth) {
-      window.appState.auth.onAuthStateChanged((user) => {
-        if (user) {
-          window.appState.user = user;
-          setupFirestoreListeners();
-        }
-      });
-    }
-
-    function setupFirestoreListeners() {
-      const db = window.appState.db;
-      if (!db) return;
-
-      // Listen to Public IP Records according to strict path rules
-      const recCol = collection(db, 'artifacts', window.appState.appId, 'public', 'data', 'ip_records');
-      onSnapshot(recCol, (snapshot) => {
-        window.appState.records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        if (window.appState.records.length === 0) {
-          seedDefaultRecords();
-        } else {
-          window.renderDashboard();
-        }
-      }, (err) => console.error("Firestore error:", err));
-
-      // Listen to Settings config
-      const configDoc = doc(db, 'artifacts', window.appState.appId, 'public', 'data', 'settings', 'app_config');
-      onSnapshot(configDoc, (docSnap) => {
-        if (docSnap.exists()) {
-          window.appState.config = docSnap.data();
-          window.populateDropdowns();
-          window.renderDashboard();
-        } else {
-          // Save default config
-          setDoc(configDoc, window.appState.config);
-        }
-      });
-    }
-
-    async function seedDefaultRecords() {
-      const db = window.appState.db;
-      const initial = [
-        { ip: "192.168.1.10", user: "Alice Smith", dept: "IT Department", device: "Desktop", status: "Active", remarks: "Primary workstation" },
-        { ip: "192.168.1.15", user: "Bob Jones", dept: "Finance", device: "Laptop", status: "Active", remarks: "Finance Lead" },
-        { ip: "192.168.1.1", user: "Gateway", dept: "Server Room", device: "Router", status: "Active", remarks: "Main Router" },
-        { ip: "192.168.1.50", user: "Shared HP", dept: "HR", device: "Printer", status: "Active", remarks: "HR Print Station" },
-        { ip: "192.168.1.100", user: "Unassigned", dept: "Server Room", device: "Server", status: "Reserved", remarks: "Backup Server Node" }
-      ];
-
-      for (const r of initial) {
-        const id = crypto.randomUUID();
-        if (db) {
-          await setDoc(doc(db, 'artifacts', window.appState.appId, 'public', 'data', 'ip_records', id), r);
-        } else {
-          window.appState.records.push({ id, ...r });
-        }
-      }
-      if (!db) window.renderDashboard();
-    }
-
-    // Expose DB handlers globally
-    window.dbSaveRecord = async (record) => {
-      const db = window.appState.db;
-      const id = record.id || crypto.randomUUID();
-      delete record.id;
-      if (db) {
-        await setDoc(doc(db, 'artifacts', window.appState.appId, 'public', 'data', 'ip_records', id), record);
-      } else {
-        const idx = window.appState.records.findIndex(r => r.id === id);
-        if (idx >= 0) window.appState.records[idx] = { id, ...record };
-        else window.appState.records.push({ id, ...record });
-        window.renderDashboard();
-      }
-    };
-
-    window.dbDeleteRecord = async (id) => {
-      const db = window.appState.db;
-      if (db) {
-        await deleteDoc(doc(db, 'artifacts', window.appState.appId, 'public', 'data', 'ip_records', id));
-      } else {
-        window.appState.records = window.appState.records.filter(r => r.id !== id);
-        window.renderDashboard();
-      }
-    };
-
-    window.dbSaveSettings = async (config) => {
-      const db = window.appState.db;
-      window.appState.config = config;
-      if (db) {
-        await setDoc(doc(db, 'artifacts', window.appState.appId, 'public', 'data', 'settings', 'app_config'), config);
-      }
-      window.populateDropdowns();
-      window.renderDashboard();
-    };
-  </script>
-
-  <!-- APP LOGIC SCRIPTS -->
-  <script>
-    // Theme Switcher
-    function toggleTheme() {
-      document.documentElement.classList.toggle('dark');
-    }
-
-    // Login Handler
-    function handleLogin(e) {
-      e.preventDefault();
-      const u = document.getElementById('loginUsername').value;
-      const p = document.getElementById('loginPassword').value;
-
-      if (u === 'admin' && p === 'admin123') {
-        document.getElementById('loginScreen').classList.add('hidden');
-        document.getElementById('appContainer').classList.remove('hidden');
-        window.populateDropdowns();
-        window.renderDashboard();
-      } else {
-        document.getElementById('loginError').classList.remove('hidden');
-      }
-    }
-
-    function handleLogout() {
-      document.getElementById('appContainer').classList.add('hidden');
-      document.getElementById('loginScreen').classList.remove('hidden');
-    }
-
-    // Modal Control
-    function openModal(id) {
-      document.getElementById(id).classList.remove('hidden');
-    }
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
-
-    // Dropdown Populator
-    window.populateDropdowns = function() {
-      const config = window.appState.config;
-      
-      const formDept = document.getElementById('formDept');
-      const deptFilter = document.getElementById('deptFilter');
-      const formDevice = document.getElementById('formDevice');
-      const deviceFilter = document.getElementById('deviceFilter');
-
-      // Dept Options
-      const deptOpts = config.departments.map(d => `<option value="${d}">${d}</option>`).join('');
-      formDept.innerHTML = deptOpts;
-      deptFilter.innerHTML = `<option value="">All Departments</option>` + deptOpts;
-
-      // Device Options
-      const devOpts = config.deviceTypes.map(d => `<option value="${d}">${d}</option>`).join('');
-      formDevice.innerHTML = devOpts;
-      deviceFilter.innerHTML = `<option value="">All Device Types</option>` + devOpts;
-
-      // Populate Settings textareas
-      document.getElementById('settingsDepts').value = config.departments.join(', ');
-      document.getElementById('settingsDevices').value = config.deviceTypes.join(', ');
-    };
-
-    // Render Dashboard
-    window.renderDashboard = function() {
-      const records = getFilteredRecords();
-      renderDeviceBreakdownCards();
-      renderTable(records);
-      renderCharts(records);
-    };
-
-    // Filters
-    function applyFilters() {
-      window.renderDashboard();
-    }
-
-    function clearFilters() {
-      document.getElementById('searchInput').value = '';
-      document.getElementById('deptFilter').value = '';
-      document.getElementById('deviceFilter').value = '';
-      document.getElementById('statusFilter').value = '';
-      document.getElementById('rangeStart').value = '';
-      document.getElementById('rangeEnd').value = '';
-      window.renderDashboard();
-    }
-
-    function ipToLong(ip) {
-      return ip.split('.').reduce((acc, oct) => (acc << 8) + parseInt(oct, 10), 0) >>> 0;
-    }
-
-    function getFilteredRecords() {
-      const query = document.getElementById('searchInput').value.toLowerCase();
-      const dept = document.getElementById('deptFilter').value;
-      const dev = document.getElementById('deviceFilter').value;
-      const status = document.getElementById('statusFilter').value;
-      const startIp = document.getElementById('rangeStart').value.trim();
-      const endIp = document.getElementById('rangeEnd').value.trim();
-
-      return window.appState.records.filter(r => {
-        const matchesQuery = !query || 
-          r.ip.toLowerCase().includes(query) || 
-          (r.user && r.user.toLowerCase().includes(query)) ||
-          (r.remarks && r.remarks.toLowerCase().includes(query));
-
-        const matchesDept = !dept || r.dept === dept;
-        const matchesDev = !dev || r.device === dev;
-        const matchesStatus = !status || r.status === status;
-
-        let matchesRange = true;
-        if (startIp && endIp) {
-          try {
-            const ipVal = ipToLong(r.ip);
-            const startVal = ipToLong(startIp);
-            const endVal = ipToLong(endIp);
-            matchesRange = ipVal >= startVal && ipVal <= endVal;
-          } catch(e) { matchesRange = true; }
-        }
-
-        return matchesQuery && matchesDept && matchesDev && matchesStatus && matchesRange;
-      });
-    }
-
-    // Render Device Breakdown Cards
-    function renderDeviceBreakdownCards() {
-      const container = document.getElementById('deviceCountCards');
-      const counts = {};
-
-      window.appState.config.deviceTypes.forEach(t => counts[t] = 0);
-      window.appState.records.forEach(r => {
-        if (counts[r.device] !== undefined) counts[r.device]++;
-        else counts[r.device] = 1;
-      });
-
-      const icons = {
-        "Desktop": "fa-desktop",
-        "Laptop": "fa-laptop",
-        "Server": "fa-server",
-        "Printer": "fa-print",
-        "Router": "fa-network-wired",
-        "IP Phone": "fa-phone-volume"
-      };
-
-      container.innerHTML = Object.entries(counts).map(([type, cnt]) => `
-        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4 rounded-2xl shadow-sm flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-slate-700 text-brand-600 dark:text-brand-400 flex items-center justify-center text-lg">
-            <i class="fa-solid ${icons[type] || 'fa-microchip'}"></i>
-          </div>
-          <div>
-            <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">${type}</div>
-            <div class="text-lg font-bold">${cnt}</div>
-          </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <input type="file" id="ocr-file-input" accept="image/*" class="hidden" onchange="handleOcrFileUpload(event)">
+                    <button onclick="document.getElementById('ocr-file-input').click()" class="flex-1 py-2 px-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 rounded-lg text-xs font-medium">
+                        <i class="fa-solid fa-[#0ea5e9] fa-upload mr-1"></i> Upload Image
+                    </button>
+                    <button onclick="runMockOcrScan()" class="flex-1 py-2 px-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-medium">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Quick Test IP
+                    </button>
+                </div>
+            </div>
         </div>
-      `).join('');
-    }
+    </div>
 
-    // Render Table
-    function renderTable(records) {
-      const tbody = document.getElementById('recordsTableBody');
-      const emptyState = document.getElementById('emptyState');
+    <!-- MAIN APP JAVASCRIPT LOGIC -->
+    <script>
+        // --- 1. FIREBASE INITIALIZATION ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDOIx8H1h7y2mpEoZubwksubqweVBuAzBI",
+            authDomain: "ipams-database.firebaseapp.com",
+            projectId: "ipams-database",
+            storageBucket: "ipams-database.firebasestorage.app",
+            messagingSenderId: "875335708106",
+            appId: "1:875335708106:web:15e70aed8875b680593333"
+        };
 
-      if (records.length === 0) {
-        tbody.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-      emptyState.classList.add('hidden');
+        let db = null;
+        let isFirestoreAvailable = false;
 
-      const statusColors = {
-        Active: 'bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-300',
-        Inactive: 'bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-300',
-        Reserved: 'bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border-amber-300'
-      };
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            isFirestoreAvailable = true;
+            console.log("Firebase initialized successfully.");
+        } catch (e) {
+            console.warn("Firestore initialization error. Operating in offline/fallback memory mode.", e);
+        }
 
-      tbody.innerHTML = records.map(r => `
-        <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-700/30 transition">
-          <td class="py-3 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">${r.ip}</td>
-          <td class="py-3 px-4 font-medium">${r.user || '-'}</td>
-          <td class="py-3 px-4 text-slate-500 dark:text-slate-400">${r.dept || '-'}</td>
-          <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 font-medium">${r.device}</span></td>
-          <td class="py-3 px-4">
-            <button onclick="toggleStatus('${r.id}', '${r.status}')" class="px-2.5 py-1 rounded-full text-xs font-semibold border ${statusColors[r.status] || ''} hover:opacity-80 transition">
-              ${r.status}
-            </button>
-          </td>
-          <td class="py-3 px-4 text-slate-500 dark:text-slate-400 max-w-xs truncate">${r.remarks || '-'}</td>
-          <td class="py-3 px-4 text-right space-x-2">
-            <button onclick="editRecord('${r.id}')" class="p-1.5 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 text-xs" title="Edit">
-              <i class="fa-solid fa-pen-to-square"></i>
-            </button>
-            <button onclick="window.dbDeleteRecord('${r.id}')" class="p-1.5 text-slate-500 hover:text-rose-600 text-xs" title="Delete">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </td>
-        </tr>
-      `).join('');
-    }
+        // --- 2. FALLBACK SEED DATA & IN-MEMORY STORES ---
+        const SEED_USERS = [
+            { id: "seed_admin", username: "admin", password: "admin123", name: "System Administrator", role: "Admin", status: "Active" },
+            { id: "seed_user", username: "user", password: "user123", name: "Standard Network Tech", role: "User", status: "Active" }
+        ];
 
-    // Toggle Status Directly
-    function toggleStatus(id, currentStatus) {
-      const next = currentStatus === 'Active' ? 'Inactive' : currentStatus === 'Inactive' ? 'Reserved' : 'Active';
-      const record = window.appState.records.find(r => r.id === id);
-      if (record) {
-        window.dbSaveRecord({ ...record, status: next });
-      }
-    }
+        const DEFAULT_CONFIG = {
+            departments: ["IT Department", "HR & Admin", "Finance", "Engineering", "Server Room", "Reception"],
+            deviceTypes: ["Desktop PC", "Laptop", "Server", "Printer", "Switch", "Router", "Access Point", "IP Phone", "CCTV Camera"]
+        };
 
-    // Save/Edit Record Form
-    function saveRecord(e) {
-      e.preventDefault();
-      const id = document.getElementById('recordId').value;
-      const record = {
-        id: id || undefined,
-        ip: document.getElementById('formIp').value.trim(),
-        device: document.getElementById('formDevice').value,
-        user: document.getElementById('formUser').value.trim(),
-        dept: document.getElementById('formDept').value,
-        status: document.getElementById('formStatus').value,
-        remarks: document.getElementById('formRemarks').value.trim()
-      };
+        const SEED_IPS = [
+            { id: "ip_1", ip: "192.168.1.10", device: "Router", assigned: "Core Gateway", dept: "Server Room", status: "Active", remarks: "Primary Gateway Router" },
+            { id: "ip_2", ip: "192.168.1.25", device: "Printer", assigned: "HR HP LaserJet", dept: "HR & Admin", status: "Active", remarks: "Shared color printer" },
+            { id: "ip_3", ip: "192.168.1.102", device: "Desktop PC", assigned: "John Server Tech", dept: "IT Department", status: "Active", remarks: "Workstation" },
+            { id: "ip_4", ip: "192.168.1.200", device: "Server", assigned: "DB Primary Node", dept: "Server Room", status: "Active", remarks: "PostgreSQL Production" }
+        ];
 
-      window.dbSaveRecord(record);
-      closeModal('recordModal');
-      document.getElementById('recordForm').reset();
-    }
+        // Active State
+        let currentUser = null;
+        let localUsers = [...SEED_USERS];
+        let localIps = [...SEED_IPS];
+        let appConfig = { ...DEFAULT_CONFIG };
+        let deptChartInstance = null;
 
-    function editRecord(id) {
-      const r = window.appState.records.find(item => item.id === id);
-      if (!r) return;
+        // --- 3. INITIALIZATION & AUTH HANDLERS ---
+        window.onload = function() {
+            checkDarkModePreference();
+            initApp();
+        };
 
-      document.getElementById('modalTitle').innerText = 'Edit IP Record';
-      document.getElementById('recordId').value = r.id;
-      document.getElementById('formIp').value = r.ip;
-      document.getElementById('formDevice').value = r.device;
-      document.getElementById('formUser').value = r.user || '';
-      document.getElementById('formDept').value = r.dept || '';
-      document.getElementById('formStatus').value = r.status;
-      document.getElementById('formRemarks').value = r.remarks || '';
+        async function initApp() {
+            // Check session storage
+            const savedUser = sessionStorage.getItem('ipams_logged_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+            }
 
-      openModal('recordModal');
-    }
+            if (isFirestoreAvailable) {
+                await syncConfigFromFirestore();
+                await syncUsersFromFirestore();
+                await syncIpsFromFirestore();
+            } else {
+                populateConfigDropdowns();
+            }
 
-    // Save App Settings
-    function saveSettings() {
-      const depts = document.getElementById('settingsDepts').value.split(',').map(s => s.trim()).filter(Boolean);
-      const devices = document.getElementById('settingsDevices').value.split(',').map(s => s.trim()).filter(Boolean);
+            if (currentUser) {
+                hideLoginScreen();
+            } else {
+                showLoginScreen();
+            }
+        }
 
-      window.dbSaveSettings({ departments: depts, deviceTypes: devices });
-      closeModal('settingsModal');
-    }
+        function showLoginScreen() {
+            document.getElementById('login-screen').classList.remove('hidden');
+        }
 
-    // OCR Scanner
-    document.getElementById('ocrFileInput').addEventListener('change', function(e) {
-      const file = e.target.files[0];
-      if (!file) return;
+        function hideLoginScreen() {
+            document.getElementById('login-screen').classList.add('hidden');
+            updateUserNavUI();
+            renderDashboard();
+        }
 
-      const statusEl = document.getElementById('ocrStatus');
-      const resEl = document.getElementById('ocrResult');
-      statusEl.classList.remove('hidden');
-      resEl.classList.add('hidden');
+        async function handleLogin(e) {
+            e.preventDefault();
+            const uInput = document.getElementById('login-username').value.trim();
+            const pInput = document.getElementById('login-password').value.trim();
+            const errDiv = document.getElementById('login-error');
+            errDiv.classList.add('hidden');
 
-      Tesseract.recognize(file, 'eng')
-        .then(({ data: { text } }) => {
-          statusEl.classList.add('hidden');
-          const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/;
-          const match = text.match(ipRegex);
+            let matchedUser = null;
 
-          if (match) {
-            document.getElementById('ocrDetectedIp').innerText = match[0];
-            resEl.classList.remove('hidden');
-          } else {
-            document.getElementById('ocrDetectedIp').innerText = "192.168.1.105 (Fallback)";
-            resEl.classList.remove('hidden');
-          }
-        })
-        .catch(() => {
-          statusEl.classList.add('hidden');
-          document.getElementById('ocrDetectedIp').innerText = "192.168.1.105 (Fallback)";
-          resEl.classList.remove('hidden');
-        });
-    });
+            if (isFirestoreAvailable) {
+                try {
+                    const snapshot = await db.collection('users').where('username', '==', uInput).get();
+                    if (!snapshot.empty) {
+                        const uDoc = snapshot.docs[0];
+                        const data = uDoc.data();
+                        if (data.password === pInput) {
+                            matchedUser = { id: uDoc.id, ...data };
+                        }
+                    }
+                } catch (err) {
+                    console.error("Firestore user search error:", err);
+                }
+            }
 
-    function useDetectedIp() {
-      const ip = document.getElementById('ocrDetectedIp').innerText;
-      closeModal('ocrModal');
-      
-      document.getElementById('modalTitle').innerText = 'Add New IP Record';
-      document.getElementById('recordId').value = '';
-      document.getElementById('recordForm').reset();
-      document.getElementById('formIp').value = ip;
-      openModal('recordModal');
-    }
+            // Fallback to local user array if not found or DB offline
+            if (!matchedUser) {
+                matchedUser = localUsers.find(u => u.username === uInput && u.password === pInput);
+            }
 
-    // CSV Export
-    function exportCSV() {
-      const records = getFilteredRecords();
-      if (records.length === 0) return;
+            if (matchedUser) {
+                if (matchedUser.status === 'Disabled') {
+                    errDiv.textContent = "Account disabled. Please contact administrator.";
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
 
-      const headers = ['IP Address', 'Assigned To', 'Dept/Room', 'Device', 'Status', 'Remarks'];
-      const rows = records.map(r => [r.ip, r.user, r.dept, r.device, r.status, r.remarks]);
+                currentUser = matchedUser;
+                sessionStorage.setItem('ipams_logged_user', JSON.stringify(currentUser));
+                hideLoginScreen();
+            } else {
+                errDiv.textContent = "Invalid username or password.";
+                errDiv.classList.remove('hidden');
+            }
+        }
 
-      let csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
-      const encodedUri = encodeURI(csvContent);
-      const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `IPAMS_Export_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+        function handleLogout() {
+            currentUser = null;
+            sessionStorage.removeItem('ipams_logged_user');
+            showLoginScreen();
+        }
 
-    // Charts
-    function renderCharts(records) {
-      // Device Chart
-      const devCounts = {};
-      records.forEach(r => devCounts[r.device] = (devCounts[r.device] || 0) + 1);
+        function updateUserNavUI() {
+            if (!currentUser) return;
+            document.getElementById('nav-user-name').textContent = currentUser.name || currentUser.username;
+            const roleBadge = document.getElementById('nav-user-role');
+            roleBadge.textContent = currentUser.role;
 
-      const ctxDev = document.getElementById('deviceChart').getContext('2d');
-      if (window.appState.deviceChart) window.appState.deviceChart.destroy();
-      window.appState.deviceChart = new Chart(ctxDev, {
-        type: 'doughnut',
-        data: {
-          labels: Object.keys(devCounts),
-          datasets: [{
-            data: Object.values(devCounts),
-            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#64748b']
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
+            const btnManageUsers = document.getElementById('btn-manage-users');
+            const btnSettings = document.getElementById('btn-settings');
 
-      // Dept Chart
-      const deptCounts = {};
-      records.forEach(r => deptCounts[r.dept || 'Unassigned'] = (deptCounts[r.dept || 'Unassigned'] || 0) + 1);
+            if (currentUser.role === 'Admin') {
+                roleBadge.className = "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-brand-500 text-white";
+                btnManageUsers.classList.remove('hidden');
+                btnSettings.classList.remove('hidden');
+            } else {
+                roleBadge.className = "px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-500 text-white";
+                btnManageUsers.classList.add('hidden');
+                btnSettings.classList.add('hidden');
+            }
+        }
 
-      const ctxDept = document.getElementById('deptChart').getContext('2d');
-      if (window.appState.deptChart) window.appState.deptChart.destroy();
-      window.appState.deptChart = new Chart(ctxDept, {
-        type: 'bar',
-        data: {
-          labels: Object.keys(deptCounts),
-          datasets: [{
-            label: 'IPs Allocated',
-            data: Object.values(deptCounts),
-            backgroundColor: '#2563eb'
-          }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
-      });
-    }
-  </script>
+        // --- 4. FIRESTORE SYNC & SEEDING ---
+        async function syncConfigFromFirestore() {
+            try {
+                const doc = await db.collection('settings').doc('app_config').get();
+                if (doc.exists) {
+                    appConfig = doc.data();
+                } else {
+                    // Seed initial config
+                    await db.collection('settings').doc('app_config').set(DEFAULT_CONFIG);
+                    appConfig = { ...DEFAULT_CONFIG };
+                }
+            } catch (err) {
+                console.error("Error syncing app config:", err);
+            }
+            populateConfigDropdowns();
+        }
+
+        async function syncUsersFromFirestore() {
+            if (!isFirestoreAvailable) return;
+            try {
+                const snapshot = await db.collection('users').get();
+                if (snapshot.empty) {
+                    // Seed initial default users into Firestore
+                    for (const user of SEED_USERS) {
+                        const { id, ...userData } = user;
+                        await db.collection('users').doc(id).set(userData);
+                    }
+                    localUsers = [...SEED_USERS];
+                } else {
+                    localUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+            } catch (err) {
+                console.error("Error syncing users from Firestore:", err);
+            }
+        }
+
+        async function syncIpsFromFirestore() {
+            if (!isFirestoreAvailable) return;
+            try {
+                const snapshot = await db.collection('ip_records').get();
+                if (snapshot.empty) {
+                    // Seed initial IP data
+                    for (const ipRec of SEED_IPS) {
+                        const { id, ...ipData } = ipRec;
+                        await db.collection('ip_records').doc(id).set(ipData);
+                    }
+                    localIps = [...SEED_IPS];
+                } else {
+                    localIps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+            } catch (err) {
+                console.error("Error syncing IP records from Firestore:", err);
+            }
+        }
+
+        function populateConfigDropdowns() {
+            const deptFilter = document.getElementById('filter-dept');
+            const formDept = document.getElementById('form-dept');
+            const devFilter = document.getElementById('filter-device');
+            const formDev = document.getElementById('form-device');
+
+            const currentDeptFilterVal = deptFilter.value;
+            const currentDevFilterVal = devFilter.value;
+
+            deptFilter.innerHTML = '<option value="">All Departments</option>';
+            formDept.innerHTML = '<option value="">(None / General)</option>';
+            appConfig.departments.forEach(d => {
+                deptFilter.innerHTML += `<option value="${d}">${d}</option>`;
+                formDept.innerHTML += `<option value="${d}">${d}</option>`;
+            });
+            deptFilter.value = currentDeptFilterVal;
+
+            devFilter.innerHTML = '<option value="">All Device Types</option>';
+            formDev.innerHTML = '<option value="">Select Device Type *</option>';
+            appConfig.deviceTypes.forEach(dev => {
+                devFilter.innerHTML += `<option value="${dev}">${dev}</option>`;
+                formDev.innerHTML += `<option value="${dev}">${dev}</option>`;
+            });
+            devFilter.value = currentDevFilterVal;
+        }
+
+        // --- 5. RENDER DASHBOARD, BREAKDOWN STATS & ANALYTICS ---
+        function renderDashboard() {
+            const filteredIps = getFilteredIps();
+            renderStatsBreakdown(filteredIps);
+            renderTable(filteredIps);
+            renderChart(filteredIps);
+        }
+
+        function renderStatsBreakdown(ips) {
+            const container = document.getElementById('stats-container');
+            document.getElementById('total-ip-count').textContent = `${localIps.length} Total Registered IPs`;
+
+            // Calculate breakdown for each configured device type
+            const counts = {};
+            appConfig.deviceTypes.forEach(type => counts[type] = 0);
+            
+            ips.forEach(rec => {
+                if (counts[rec.device] !== undefined) {
+                    counts[rec.device]++;
+                } else {
+                    counts[rec.device] = 1;
+                }
+            });
+
+            const iconMap = {
+                "Desktop PC": "fa-desktop",
+                "Laptop": "fa-laptop",
+                "Server": "fa-server",
+                "Printer": "fa-print",
+                "Switch": "fa-network-wired",
+                "Router": "fa-route",
+                "Access Point": "fa-wifi",
+                "IP Phone": "fa-phone-volume",
+                "CCTV Camera": "fa-video"
+            };
+
+            let html = '';
+            appConfig.deviceTypes.forEach(dev => {
+                const count = counts[dev] || 0;
+                const icon = iconMap[dev] || 'fa-microchip';
+                html += `
+                    <div class="bg-white dark:bg-gray-800 p-3 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm flex items-center space-x-3">
+                        <div class="p-2.5 rounded-lg bg-brand-50 dark:bg-brand-950/50 text-brand-600 dark:text-brand-400">
+                            <i class="fa-solid ${icon} text-lg"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">${dev}</div>
+                            <div class="text-lg font-bold text-gray-900 dark:text-white leading-none mt-0.5">${count}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function renderTable(ips) {
+            const tbody = document.getElementById('ip-table-body');
+            const noRec = document.getElementById('no-records');
+
+            if (ips.length === 0) {
+                tbody.innerHTML = '';
+                noRec.classList.remove('hidden');
+                return;
+            }
+            noRec.classList.add('hidden');
+
+            const statusColors = {
+                'Active': 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+                'Reserved': 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+                'Offline': 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+                'Maintenance': 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300'
+            };
+
+            let html = '';
+            ips.forEach(item => {
+                const sBadge = statusColors[item.status] || 'bg-gray-100 text-gray-800';
+                html += `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/40 transition">
+                        <td class="py-3 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">${escapeHtml(item.ip)}</td>
+                        <td class="py-3 px-4 font-medium">${escapeHtml(item.assigned || '-')}</td>
+                        <td class="py-3 px-4 text-gray-600 dark:text-gray-300">${escapeHtml(item.dept || '-')}</td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                                ${escapeHtml(item.device)}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${sBadge}">
+                                ${escapeHtml(item.status || 'Active')}
+                            </span>
+                        </td>
+                        <td class="py-3 px-4 text-xs text-gray-500 dark:text-gray-400 max-w-xs truncate">${escapeHtml(item.remarks || '-')}</td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <button onclick="editIpRecord('${item.id}')" class="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 rounded" title="Edit Record">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deleteIpRecord('${item.id}')" class="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/50 rounded" title="Delete Record">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function renderChart(ips) {
+            const ctx = document.getElementById('deptChart').getContext('2d');
+            
+            // Count distribution by Department
+            const deptCounts = {};
+            appConfig.departments.forEach(d => deptCounts[d] = 0);
+            deptCounts["Unassigned"] = 0;
+
+            ips.forEach(r => {
+                const dKey = r.dept && appConfig.departments.includes(r.dept) ? r.dept : "Unassigned";
+                deptCounts[dKey] = (deptCounts[dKey] || 0) + 1;
+            });
+
+            const labels = Object.keys(deptCounts);
+            const dataVals = Object.values(deptCounts);
+
+            if (deptChartInstance) {
+                deptChartInstance.destroy();
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#9ca3af' : '#4b5563';
+
+            deptChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Assigned IP Addresses',
+                        data: dataVals,
+                        backgroundColor: 'rgba(14, 165, 233, 0.7)',
+                        borderColor: '#0ea5e9',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: textColor, font: { size: 11 } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            ticks: { color: textColor, stepSize: 1 },
+                            grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- 6. SEARCH & FILTERING LOGIC ---
+        function getFilteredIps() {
+            const globalQuery = document.getElementById('filter-global').value.toLowerCase().trim();
+            const deptVal = document.getElementById('filter-dept').value;
+            const deviceVal = document.getElementById('filter-device').value;
+            const ipStart = document.getElementById('filter-ip-start').value.trim();
+            const ipEnd = document.getElementById('filter-ip-end').value.trim();
+
+            const startNum = ipToNum(ipStart);
+            const endNum = ipToNum(ipEnd);
+
+            return localIps.filter(item => {
+                // Global Match
+                if (globalQuery) {
+                    const matchGlobal = item.ip.toLowerCase().includes(globalQuery) ||
+                        (item.assigned && item.assigned.toLowerCase().includes(globalQuery)) ||
+                        (item.remarks && item.remarks.toLowerCase().includes(globalQuery));
+                    if (!matchGlobal) return false;
+                }
+
+                // Dept Match
+                if (deptVal && item.dept !== deptVal) return false;
+
+                // Device Match
+                if (deviceVal && item.device !== deviceVal) return false;
+
+                // IP Range Filter
+                if (startNum || endNum) {
+                    const targetNum = ipToNum(item.ip);
+                    if (!targetNum) return false;
+                    if (startNum && targetNum < startNum) return false;
+                    if (endNum && targetNum > endNum) return false;
+                }
+
+                return true;
+            });
+        }
+
+        function applyFilters() {
+            renderDashboard();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-global').value = '';
+            document.getElementById('filter-dept').value = '';
+            document.getElementById('filter-device').value = '';
+            document.getElementById('filter-ip-start').value = '';
+            document.getElementById('filter-ip-end').value = '';
+            renderDashboard();
+        }
+
+        function ipToNum(ipStr) {
+            if (!ipStr) return null;
+            const parts = ipStr.split('.').map(Number);
+            if (parts.length !== 4 || parts.some(isNaN)) return null;
+            return ((parts[0] << 24) >>> 0) + (parts[1] << 16) + (parts[2] << 8) + parts[3];
+        }
+
+        // --- 7. IP RECORD CRUD MODAL ACTIONS ---
+        function openIpModal(record = null) {
+            const modal = document.getElementById('ip-modal');
+            const title = document.getElementById('ip-modal-title');
+            document.getElementById('ip-form').reset();
+
+            if (record) {
+                title.textContent = 'Edit IP Record';
+                document.getElementById('ip-doc-id').value = record.id;
+                document.getElementById('form-ip').value = record.ip;
+                document.getElementById('form-device').value = record.device;
+                document.getElementById('form-assigned').value = record.assigned || '';
+                document.getElementById('form-dept').value = record.dept || '';
+                document.getElementById('form-status').value = record.status || 'Active';
+                document.getElementById('form-remarks').value = record.remarks || '';
+            } else {
+                title.textContent = 'Add New IP Record';
+                document.getElementById('ip-doc-id').value = '';
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeIpModal() {
+            document.getElementById('ip-modal').classList.add('hidden');
+        }
+
+        async function saveIpRecord(e) {
+            e.preventDefault();
+            const docId = document.getElementById('ip-doc-id').value;
+            const ipData = {
+                ip: document.getElementById('form-ip').value.trim(),
+                device: document.getElementById('form-device').value,
+                assigned: document.getElementById('form-assigned').value.trim(),
+                dept: document.getElementById('form-dept').value,
+                status: document.getElementById('form-status').value,
+                remarks: document.getElementById('form-remarks').value.trim()
+            };
+
+            if (isFirestoreAvailable) {
+                try {
+                    if (docId) {
+                        await db.collection('ip_records').doc(docId).update(ipData);
+                    } else {
+                        await db.collection('ip_records').add(ipData);
+                    }
+                    await syncIpsFromFirestore();
+                } catch (err) {
+                    console.error("Error saving IP to Firestore:", err);
+                }
+            } else {
+                if (docId) {
+                    const idx = localIps.findIndex(i => i.id === docId);
+                    if (idx !== -1) localIps[idx] = { id: docId, ...ipData };
+                } else {
+                    localIps.push({ id: 'ip_' + Date.now(), ...ipData });
+                }
+            }
+
+            closeIpModal();
+            renderDashboard();
+        }
+
+        function editIpRecord(id) {
+            const record = localIps.find(i => i.id === id);
+            if (record) openIpModal(record);
+        }
+
+        async function deleteIpRecord(id) {
+            if (!confirm("Are you sure you want to delete this IP record?")) return;
+
+            if (isFirestoreAvailable) {
+                try {
+                    await db.collection('ip_records').doc(id).delete();
+                    await syncIpsFromFirestore();
+                } catch (err) {
+                    console.error("Error deleting IP record:", err);
+                }
+            } else {
+                localIps = localIps.filter(i => i.id !== id);
+            }
+            renderDashboard();
+        }
+
+        // --- 8. USER MANAGEMENT MODAL ACTIONS (ADMIN ONLY) ---
+        function openUserModal() {
+            if (!currentUser || currentUser.role !== 'Admin') {
+                alert('Access restricted to Administrators.');
+                return;
+            }
+            resetUserForm();
+            renderUsersTable();
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+
+        function closeUserModal() {
+            document.getElementById('user-modal').classList.add('hidden');
+        }
+
+        function resetUserForm() {
+            document.getElementById('user-form').reset();
+            document.getElementById('user-doc-id').value = '';
+            document.getElementById('user-form-title').textContent = 'Add New Account';
+            document.getElementById('user-submit-btn-text').textContent = 'Save User';
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('user-table-body');
+            let html = '';
+
+            localUsers.forEach(u => {
+                const isSelf = currentUser && currentUser.id === u.id;
+                const statusBadge = u.status === 'Active' 
+                    ? '<span class="px-2 py-0.5 rounded-full bg-green-100 text-green-800 text-[10px] font-bold">Active</span>'
+                    : '<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">Disabled</span>';
+                
+                html += `
+                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                        <td class="p-2.5 font-semibold font-mono">${escapeHtml(u.username)}</td>
+                        <td class="p-2.5">${escapeHtml(u.name)}</td>
+                        <td class="p-2.5 font-medium">${escapeHtml(u.role)}</td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-right space-x-1">
+                            <button onclick="editUserAccount('${u.id}')" class="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/40 rounded" title="Edit User">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                            ${!isSelf ? `
+                                <button onclick="deleteUserAccount('${u.id}')" class="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/40 rounded" title="Delete User">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            ` : '<span class="text-[10px] text-gray-400 italic px-1">(You)</span>'}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function editUserAccount(id) {
+            const user = localUsers.find(u => u.id === id);
+            if (!user) return;
+
+            document.getElementById('user-doc-id').value = user.id;
+            document.getElementById('user-input-username').value = user.username;
+            document.getElementById('user-input-password').value = user.password;
+            document.getElementById('user-input-name').value = user.name;
+            document.getElementById('user-input-role').value = user.role;
+            document.getElementById('user-input-status').value = user.status || 'Active';
+
+            document.getElementById('user-form-title').textContent = 'Edit User Account';
+            document.getElementById('user-submit-btn-text').textContent = 'Update User';
+        }
+
+        async function saveUserAccount(e) {
+            e.preventDefault();
+            const docId = document.getElementById('user-doc-id').value;
+            const userData = {
+                username: document.getElementById('user-input-username').value.trim(),
+                password: document.getElementById('user-input-password').value.trim(),
+                name: document.getElementById('user-input-name').value.trim(),
+                role: document.getElementById('user-input-role').value,
+                status: document.getElementById('user-input-status').value
+            };
+
+            if (isFirestoreAvailable) {
+                try {
+                    if (docId) {
+                        await db.collection('users').doc(docId).update(userData);
+                    } else {
+                        await db.collection('users').add(userData);
+                    }
+                    await syncUsersFromFirestore();
+                } catch (err) {
+                    console.error("Error writing user to Firestore:", err);
+                }
+            } else {
+                if (docId) {
+                    const idx = localUsers.findIndex(u => u.id === docId);
+                    if (idx !== -1) localUsers[idx] = { id: docId, ...userData };
+                } else {
+                    localUsers.push({ id: 'user_' + Date.now(), ...userData });
+                }
+            }
+
+            resetUserForm();
+            renderUsersTable();
+        }
+
+        async function deleteUserAccount(id) {
+            if (!confirm("Are you sure you want to delete this user account?")) return;
+
+            if (isFirestoreAvailable) {
+                try {
+                    await db.collection('users').doc(id).delete();
+                    await syncUsersFromFirestore();
+                } catch (err) {
+                    console.error("Error deleting user from Firestore:", err);
+                }
+            } else {
+                localUsers = localUsers.filter(u => u.id !== id);
+            }
+            renderUsersTable();
+        }
+
+        // --- 9. APP SETTINGS (DEPT / DEVICE TYPES DB SYNC) ---
+        function openSettingsModal() {
+            document.getElementById('settings-depts').value = appConfig.departments.join(', ');
+            document.getElementById('settings-devices').value = appConfig.deviceTypes.join(', ');
+            document.getElementById('settings-modal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        }
+
+        async function saveSettings() {
+            const deptsRaw = document.getElementById('settings-depts').value;
+            const devRaw = document.getElementById('settings-devices').value;
+
+            const newDepts = deptsRaw.split(',').map(s => s.trim()).filter(Boolean);
+            const newDevs = devRaw.split(',').map(s => s.trim()).filter(Boolean);
+
+            appConfig.departments = newDepts;
+            appConfig.deviceTypes = newDevs;
+
+            if (isFirestoreAvailable) {
+                try {
+                    await db.collection('settings').doc('app_config').set(appConfig);
+                } catch (err) {
+                    console.error("Error saving config settings to Firestore:", err);
+                }
+            }
+
+            populateConfigDropdowns();
+            closeSettingsModal();
+            renderDashboard();
+        }
+
+        // --- 10. OCR CAMERA / IMAGE SCANNER ---
+        function openOcrModal() {
+            document.getElementById('ocr-status').textContent = '';
+            document.getElementById('ocr-modal').classList.remove('hidden');
+        }
+
+        function closeOcrModal() {
+            document.getElementById('ocr-modal').classList.add('hidden');
+        }
+
+        async function handleOcrFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const statusEl = document.getElementById('ocr-status');
+            statusEl.textContent = 'Processing OCR scan on image...';
+
+            try {
+                const result = await Tesseract.recognize(file, 'eng');
+                const text = result.data.text;
+                
+                // Extract IP Pattern
+                const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b/;
+                const match = text.match(ipRegex);
+
+                if (match) {
+                    statusEl.textContent = `IP Found: ${match[0]}`;
+                    closeOcrModal();
+                    openIpModal();
+                    document.getElementById('form-ip').value = match[0];
+                } else {
+                    statusEl.textContent = 'No valid IP address pattern detected in image.';
+                }
+            } catch (err) {
+                console.error("OCR Error:", err);
+                statusEl.textContent = 'Failed to scan image. Please try another image.';
+            }
+        }
+
+        function runMockOcrScan() {
+            const statusEl = document.getElementById('ocr-status');
+            statusEl.textContent = 'Simulating instant hardware scan...';
+            setTimeout(() => {
+                const mockIp = `192.168.1.${Math.floor(Math.random() * 200) + 10}`;
+                closeOcrModal();
+                openIpModal();
+                document.getElementById('form-ip').value = mockIp;
+                document.getElementById('form-remarks').value = 'Scanned via Camera OCR';
+            }, 600);
+        }
+
+        // --- 11. EXPORT TO CSV ---
+        function exportCSV() {
+            const ips = getFilteredIps();
+            if (ips.length === 0) {
+                alert('No data to export.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,IP Address,Assigned To,Department,Device Type,Status,Remarks\n";
+            ips.forEach(r => {
+                const row = [
+                    `"${r.ip || ''}"`,
+                    `"${r.assigned || ''}"`,
+                    `"${r.dept || ''}"`,
+                    `"${r.device || ''}"`,
+                    `"${r.status || 'Active'}"`,
+                    `"${(r.remarks || '').replace(/"/g, '""')}"`
+                ].join(',');
+                csvContent += row + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `IPAMS_Export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- 12. UTILS & DARK MODE TOGGLE ---
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('dark-icon');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-moon';
+                localStorage.setItem('theme', 'light');
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-sun';
+                localStorage.setItem('theme', 'dark');
+            }
+            if (currentUser) renderDashboard();
+        }
+
+        function checkDarkModePreference() {
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('dark-icon').className = 'fa-solid fa-sun';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+    </script>
 </body>
 </html>
