@@ -629,22 +629,25 @@
           statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">Inactive</span>`;
         }
 
+        // Fixed alignment classes added here (py-4, align-middle, h-full)
         tr.innerHTML = `
-          <td class="py-3 px-4 font-mono font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 my-auto">
-            ${rec.ip || '-'}
-            ${isDuplicate ? `<span title="Duplicate IP Address Detected!" class="text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1 bg-rose-100 dark:bg-rose-900/50 px-1.5 py-0.5 rounded font-sans"><i class="fa-solid fa-triangle-exclamation"></i> Duplicate</span>` : ''}
+          <td class="py-4 px-4 align-middle font-mono font-bold text-slate-900 dark:text-slate-100">
+            <div class="flex items-center gap-2">
+              <span>${rec.ip || '-'}</span>
+              ${isDuplicate ? `<span title="Duplicate IP Address Detected!" class="text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1 bg-rose-100 dark:bg-rose-900/50 px-1.5 py-0.5 rounded font-sans"><i class="fa-solid fa-triangle-exclamation"></i> Duplicate</span>` : ''}
+            </div>
           </td>
-          <td class="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">${rec.userName || '<span class="text-slate-400 italic">Unassigned</span>'}</td>
-          <td class="py-3 px-4 text-slate-600 dark:text-slate-400">
+          <td class="py-4 px-4 align-middle text-slate-700 dark:text-slate-300 font-medium">${rec.userName || '<span class="text-slate-400 italic">Unassigned</span>'}</td>
+          <td class="py-4 px-4 align-middle text-slate-600 dark:text-slate-400">
             <div>${rec.dept || '-'}</div>
             ${rec.room ? `<div class="text-[11px] text-slate-400"><i class="fa-solid fa-door-open text-[10px] mr-1"></i>${rec.room}</div>` : ''}
           </td>
-          <td class="py-3 px-4 text-slate-700 dark:text-slate-300">${rec.device || '-'}</td>
-          <td class="py-3 px-4 cursor-pointer" onclick="quickToggleStatus('${rec.id}')" title="Click to quick toggle status">
+          <td class="py-4 px-4 align-middle text-slate-700 dark:text-slate-300">${rec.device || '-'}</td>
+          <td class="py-4 px-4 align-middle cursor-pointer" onclick="quickToggleStatus('${rec.id}')" title="Click to quick toggle status">
             ${statusBadge}
           </td>
-          <td class="py-3 px-4 text-slate-500 dark:text-slate-400 text-xs max-w-[180px] truncate" title="${rec.remarks || ''}">${rec.remarks || '-'}</td>
-          <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+          <td class="py-4 px-4 align-middle text-slate-500 dark:text-slate-400 text-xs max-w-[180px] truncate" title="${rec.remarks || ''}">${rec.remarks || '-'}</td>
+          <td class="py-4 px-4 align-middle text-right space-x-1 whitespace-nowrap">
             <button onclick="editRecord('${rec.id}')" class="p-1.5 text-slate-500 hover:text-brand-600 dark:hover:text-brand-400 rounded transition" title="Edit Record">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
