@@ -17,6 +17,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- PapaParse for CSV Parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -134,6 +137,12 @@
           </div>
 
           <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- Import CSV Button -->
+            <button onclick="openImportModal()" title="Bulk Import IPs via CSV" class="px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
+              <i class="fa-solid fa-file-arrow-up text-emerald-500"></i>
+              <span class="hidden md:inline">Import CSV</span>
+            </button>
+
             <button onclick="openSettingsModal()" title="Manage Departments & Devices" class="px-3 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs sm:text-sm font-medium transition flex items-center gap-1.5 border border-slate-200 dark:border-slate-700">
               <i class="fa-solid fa-sliders text-brand-500"></i>
               <span class="hidden md:inline">Settings</span>
@@ -265,6 +274,41 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- BULK IMPORT CSV MODAL -->
+  <div id="importModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+          <i class="fa-solid fa-file-arrow-up text-brand-600"></i> Bulk Import IPs via CSV
+        </h3>
+        <button onclick="closeImportModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <p class="text-xs text-slate-600 dark:text-slate-300">
+          Upload a CSV file containing IP address records. You can download and use the sample file template below.
+        </p>
+
+        <!-- Download Sample CSV Button -->
+        <button onclick="downloadSampleCSV()" class="w-full py-2 px-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
+          <i class="fa-solid fa-download text-brand-500"></i> Download Sample CSV Format
+        </button>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Select CSV File</label>
+          <input type="file" id="csvFileInput" accept=".csv" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 dark:file:bg-slate-700 dark:file:text-slate-200 cursor-pointer" />
+        </div>
+      </div>
+
+      <div class="px-6 py-3 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-700 flex justify-end gap-2">
+        <button onclick="closeImportModal()" class="px-4 py-1.5 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300">Cancel</button>
+        <button onclick="processCSVImport()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-1.5 rounded-lg text-xs font-medium shadow-sm transition">Upload & Import</button>
+      </div>
+    </div>
   </div>
 
   <!-- ADD / EDIT IP MODAL -->
@@ -629,7 +673,6 @@
           statusBadge = `<span class="px-2 py-0.5 text-[11px] font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800">Inactive</span>`;
         }
 
-        // Perfect Vertical Center Alignment applied using table-cell vertical alignment (align-middle)
         tr.innerHTML = `
           <td class="py-4 px-4 align-middle font-mono font-bold text-slate-900 dark:text-slate-100">
             <div class="flex items-center gap-2">
@@ -833,6 +876,81 @@
 
     function closeModal() {
       document.getElementById('ipModal').classList.add('hidden');
+    }
+
+    function openImportModal() {
+      document.getElementById('importModal').classList.remove('hidden');
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').classList.add('hidden');
+      document.getElementById('csvFileInput').value = '';
+    }
+
+    function downloadSampleCSV() {
+      const sampleHeaders = ["IP Address", "Assigned To", "Department", "Room No", "Device Type", "Status", "Remarks"];
+      const sampleRow = ["192.168.1.50", "John Doe", "IT Infrastructure", "101-A", "Desktop PC", "Active", "Main office PC"];
+      const csvContent = "data:text/csv;charset=utf-8," + [sampleHeaders.join(','), sampleRow.join(',')].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "IPAMS_Sample_Import.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    async function processCSVImport() {
+      const fileInput = document.getElementById('csvFileInput');
+      if (!fileInput.files || fileInput.files.length === 0) {
+        alert("Please select a CSV file first!");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+          const data = results.data;
+          if (!data || data.length === 0) {
+            alert("The uploaded CSV file is empty or formatted incorrectly.");
+            return;
+          }
+
+          let addedCount = 0;
+          for (let row of data) {
+            const ip = (row["IP Address"] || row["ip"] || "").trim();
+            if (!ip) continue;
+
+            const recordData = {
+              ip: ip,
+              userName: (row["Assigned To"] || row["userName"] || "").trim(),
+              dept: (row["Department"] || row["dept"] || "").trim(),
+              room: (row["Room No"] || row["room"] || "").trim(),
+              device: (row["Device Type"] || row["device"] || "Desktop PC").trim(),
+              status: (row["Status"] || row["status"] || "Active").trim(),
+              remarks: (row["Remarks"] || row["remarks"] || "").trim(),
+              updatedAt: new Date().toISOString()
+            };
+
+            if (isFirebaseActive && db) {
+              try {
+                await db.collection("ip_records").add(recordData);
+                addedCount++;
+              } catch (err) {
+                console.error("Error adding record during bulk import:", err);
+              }
+            }
+          }
+
+          alert(`Successfully imported ${addedCount} IP records!`);
+          closeImportModal();
+        },
+        error: function(err) {
+          alert("Error parsing CSV: " + err.message);
+        }
+      });
     }
 
     function editRecord(id) {
