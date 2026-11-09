@@ -640,8 +640,8 @@
       filterDevice.value = currentFilterDevice;
     }
 
-    // ==========================================
-    // 4. TABLE SORTING LOGIC
+// ==========================================
+    // 4. TABLE SORTING LOGIC (Updated & Fixed)
     // ==========================================
     function sortTable(column) {
       if (currentSortColumn === column) {
@@ -651,11 +651,12 @@
         sortAscending = true;
       }
 
+      // filteredRecords-നെ സോർട്ട് ചെയ്യുക (Search/Filter ചെയ്ത ഡാറ്റ കറക്റ്റ് ആയി സോർട്ട് ആവാൻ)
       filteredRecords.sort((a, b) => {
         let valA = (a[column] || '').toString().toLowerCase();
         let valB = (b[column] || '').toString().toLowerCase();
 
-        // Special handling for IP sorting numerically if needed
+        // IP അഡ്രസ്സ് ആണെങ്കിൽ നമ്പറുകൾ ആയി കംപയർ ചെയ്യുക
         if (column === 'ip') {
           valA = ipToLong(a[column] || '0.0.0.0');
           valB = ipToLong(b[column] || '0.0.0.0');
@@ -808,15 +809,15 @@
         return matchesSearch && matchesDept && matchesDevice && matchesRange;
       });
 
-      // Maintain sorting if active
+      // നിലവിൽ സോർട്ട് സെലക്ട് ചെയ്തിട്ടുണ്ടെങ്കിൽ ആ സോർട്ടിങ് നിലനിർത്തുക
       if (currentSortColumn) {
-        sortTable(currentSortColumn);
-        sortAscending = !sortAscending; // toggle back since sortTable flips it
+        const activeCol = currentSortColumn;
+        currentSortColumn = ''; // toggle തിരിച്ചുപോകാതിരിക്കാൻ
+        sortTable(activeCol);
       } else {
         renderTable();
       }
     }
-
     function ipToLong(ip) {
       const parts = ip.split('.');
       if (parts.length !== 4) return 0;
